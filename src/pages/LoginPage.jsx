@@ -100,7 +100,7 @@ export default function LoginPage() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 pt-8"
                style={{ borderTop:'1px solid rgba(255,255,255,0.12)' }}>
-            {[{ num:'8', label:'Classes' },{ num:'∞', label:'Students' },{ num:'100%', label:'Real-time' }].map(s=>(
+            {[{ num:'8', label:'Classes' },{ num:'50+', label:'Students' },{ num:'100%', label:'Real-time' }].map(s=>(
               <div key={s.label}>
                 <p className="font-display text-2xl font-bold" style={{ color:'#E57A06', fontFamily:'Fraunces,serif' }}>{s.num}</p>
                 <p className="font-body text-white/40 text-xs mt-0.5">{s.label}</p>
