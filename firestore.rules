@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthed()   { return request.auth != null; }
+    function profile()    { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function isAdmin()    { return isAuthed() && profile().role == 'admin'; }
+    function isTeacher()  { return isAuthed() && profile().role == 'teacher'; }
+    function myClass()    { return profile().assignedClass; }
+
+    // ── Users ──
+    match /users/{uid} {
+      allow read:   if isAuthed() && (request.auth.uid == uid || isAdmin());
+      allow write:  if isAdmin();
+    }
+
+    // ── Students ──
+    match /students/{studentId} {
+      allow read, write: if isAdmin();
+      allow read:        if isTeacher() && resource.data.classes.hasAny([myClass()]);
+      allow create:      if isTeacher() && request.resource.data.classes.hasAny([myClass()]);
+      allow update:      if isAdmin(); // drops are admin-only writes
+    }
+
+    // ── Attendance ──
+    match /attendance/{docId} {
+      allow read, write:  if isAdmin();
+      allow read:         if isTeacher() && resource.data.className == myClass();
+      allow create, update: if isTeacher()
+                           && request.resource.data.className == myClass()
+                           && request.resource.data.markedBy == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    // ── Class Config ──
+    match /classConfig/{classId} {
+      allow read:  if isAuthed();   // teachers need to read their class config
+      allow write: if isAdmin();
+    }
+
+    // ── Drop Requests ──
+    match /dropRequests/{reqId} {
+      allow read:   if isAdmin() || (isTeacher() && resource.data.className == myClass());
+      allow create: if isTeacher() && request.resource.data.className == myClass()
+                    && request.resource.data.requestedBy == request.auth.uid;
+      allow update: if isAdmin(); // only admin can approve/reject
+      allow delete: if isAdmin();
+    }
+  }
+}
