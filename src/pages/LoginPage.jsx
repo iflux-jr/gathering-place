@@ -79,9 +79,7 @@ export default function LoginPage() {
               <span style={{ color:'#E57A06' }}>moment</span><br/>
               that matters.
             </h1>
-            <p className="font-body text-white/65 text-base leading-relaxed max-w-sm mb-10">
-              Streamlined attendance for every vocational class. Real-time updates, session tracking, and full visibility.
-            </p>
+            
             <div className="flex flex-col gap-3">
               {[
                 { Icon:Wifi,     text:'Live real-time updates' },
