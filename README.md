@@ -320,7 +320,3 @@ npm run lint     # ESLint check
 - `.section-title`
 
 ---
-
-## 📞 Support
-
-For issues, feature requests, or help setting up Firebase, contact your system administrator or development team.
