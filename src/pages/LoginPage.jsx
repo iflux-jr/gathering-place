@@ -7,7 +7,7 @@ import { loginUser, getUserProfile } from '../firebase/users';
 import useAuthStore from '../store/authStore';
 import { Spinner } from '../components/shared/UIComponents';
 
-const BG_IMAGE = 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1200&q=80&auto=format&fit=crop';
+const BG_IMAGE = 'https://media.istockphoto.com/id/1144631648/photo/teacher-demonstrating-the-art-of-modeling-ceramic-clay-to-university-students.webp?a=1&b=1&s=612x612&w=0&k=20&c=Z_IsVaeT5b7YME3w75GVFJAIUBl1hLgNPTCXFhGDd68=';
 
 export default function LoginPage() {
   const navigate       = useNavigate();
@@ -75,9 +75,8 @@ export default function LoginPage() {
           <div>
             <h1 className="font-display text-5xl text-white font-bold leading-[1.1] mb-5"
                 style={{ fontFamily:'Fraunces,serif' }}>
-              Track every<br/>
-              <span style={{ color:'#E57A06' }}>moment</span><br/>
-              that matters.
+              Every student<br/>
+              <span style={{ color:'#E57A06' }}>belongs.</span><br/>
             </h1>
             
             <div className="flex flex-col gap-3">

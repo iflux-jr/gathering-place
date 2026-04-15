@@ -144,3 +144,33 @@ export async function phoneExists(phone) {
   const snapshot = await getDocs(q);
   return !snapshot.empty;
 }
+
+/**
+ * Check if phone number exists ONLY in active students collection.
+ * Used during registration — archived students with same phone CAN re-register.
+ * @param {string} phone
+ * @returns {Promise<boolean>}
+ */
+export async function phoneExistsActive(phone) {
+  const q = query(collection(db, STUDENTS_COLLECTION), where('phone', '==', phone));
+  const snapshot = await getDocs(q);
+  return !snapshot.empty;
+}
+
+/**
+ * Register a student, optionally carrying forward archive metadata
+ * @param {Object} studentData
+ * @param {Object|null} fromArchive  — { archiveKey, semesterLabel } if re-registering
+ */
+export async function registerStudentWithHistory(studentData, fromArchive = null) {
+  const docRef = await addDoc(collection(db, STUDENTS_COLLECTION), {
+    ...studentData,
+    createdAt:   serverTimestamp(),
+    ...(fromArchive ? {
+      reRegistered:     true,
+      previousArchive:  fromArchive.archiveKey,
+      previousSemester: fromArchive.semesterLabel,
+    } : {}),
+  });
+  return docRef.id;
+}

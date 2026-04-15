@@ -1,4 +1,4 @@
-// src/pages/AdminDashboard.jsx — v2: sessions, semester, drop requests, class config
+// src/pages/AdminDashboard.jsx — v3: registration control + semester archive
 import { useState, useEffect, useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -7,8 +7,8 @@ import {
 import {
   Users, Download, Search, Eye, LayoutDashboard,
   ClipboardList, BarChart2, GraduationCap, TrendingUp,
-  CheckCircle2, XCircle, Check, X, Settings, UserMinus,
-  CalendarDays, ShieldAlert,
+  Check, X, Settings, UserMinus, CalendarDays,
+  Archive, Lock,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '../components/shared/Navbar';
@@ -17,26 +17,31 @@ import {
   StatCard, SkeletonCard, SkeletonRow, Modal,
   PercentageRing, Alert, DropRequestBadge,
 } from '../components/shared/UIComponents';
-import ClassConfigPanel   from '../components/admin/ClassConfigPanel';
-import DropRequestsPanel  from '../components/admin/DropRequestsPanel';
+import ClassConfigPanel        from '../components/admin/ClassConfigPanel';
+import DropRequestsPanel       from '../components/admin/DropRequestsPanel';
+import RegistrationControlPanel from '../components/admin/RegistrationControlPanel';
+import SemesterArchivePanel    from '../components/admin/SemesterArchivePanel';
 import { subscribeToAllStudents, updateStudent } from '../firebase/students';
 import { subscribeToAllAttendance, calcAttendancePercentage } from '../firebase/attendance';
 import { subscribeToUsers }          from '../firebase/users';
 import { subscribeToAllDropRequests, adminDirectDrop } from '../firebase/dropRequests';
 import { subscribeToAllClassConfigs } from '../firebase/classConfig';
-import { currentWeekNumber, currentYear, getRecentWeeks, formatDateShort } from '../utils/dateUtils';
+import { subscribeToRegistrationStatus } from '../firebase/systemSettings';
+import { formatDateShort } from '../utils/dateUtils';
 import { exportToCSV, formatStudentsForExport, formatAttendanceForExport } from '../utils/exportUtils';
 import { CLASSES, CLASS_LABELS, CHART_COLORS } from '../utils/constants';
 import useAuthStore from '../store/authStore';
 
 const TABS = [
-  { id: 'overview',   label: 'Overview',    Icon: LayoutDashboard },
-  { id: 'students',   label: 'Students',    Icon: Users },
-  { id: 'attendance', label: 'Attendance',  Icon: ClipboardList },
-  { id: 'analytics',  label: 'Analytics',   Icon: BarChart2 },
-  { id: 'config',     label: 'Class Setup', Icon: Settings },
+  { id: 'overview',    label: 'Overview',      Icon: LayoutDashboard },
+  { id: 'students',    label: 'Students',      Icon: Users },
+  { id: 'attendance',  label: 'Attendance',    Icon: ClipboardList },
+  { id: 'analytics',  label: 'Analytics',     Icon: BarChart2 },
+  { id: 'config',     label: 'Class Setup',   Icon: Settings },
   { id: 'drops',      label: 'Drop Requests', Icon: UserMinus },
-  { id: 'teachers',   label: 'Teachers',    Icon: GraduationCap },
+  { id: 'archive',    label: 'Archive',       Icon: Archive },
+  { id: 'registration',label: 'Registration', Icon: Lock },
+  { id: 'teachers',   label: 'Teachers',      Icon: GraduationCap },
 ];
 
 export default function AdminDashboard() {
@@ -48,6 +53,7 @@ export default function AdminDashboard() {
   const [users,       setUsers]       = useState([]);
   const [dropReqs,    setDropReqs]    = useState([]);
   const [classConfigs,setClassConfigs]= useState({});
+  const [regStatus,   setRegStatus]   = useState({ isOpen: true });
   const [loading,     setLoading]     = useState(true);
 
   // Filters
@@ -64,7 +70,8 @@ export default function AdminDashboard() {
     const u3 = subscribeToUsers(setUsers);
     const u4 = subscribeToAllDropRequests(setDropReqs);
     const u5 = subscribeToAllClassConfigs(setClassConfigs);
-    return () => { u1(); u2(); u3(); u4(); u5(); };
+    const u6 = subscribeToRegistrationStatus(setRegStatus);
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); };
   }, []);
 
   const pendingDrops = dropReqs.filter(r => r.status === 'pending').length;
@@ -180,7 +187,8 @@ export default function AdminDashboard() {
         {/* ── Tabs ── */}
         <div className="flex gap-1.5 overflow-x-auto pb-1 animate-slide-up" style={{ animationDelay:'0.05s' }}>
           {TABS.map(tab => {
-            const hasBadge = tab.id === 'drops' && pendingDrops > 0;
+            const hasBadge    = tab.id === 'drops' && pendingDrops > 0;
+            const hasRegBadge = tab.id === 'registration' && !regStatus.isOpen;
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className={`relative flex items-center gap-2 px-4 py-2.5 rounded-2xl font-body text-sm
@@ -198,6 +206,9 @@ export default function AdminDashboard() {
                     {pendingDrops}
                   </span>
                 )}
+                {hasRegBadge && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-white" />
+                )}
               </button>
             );
           })}
@@ -206,12 +217,38 @@ export default function AdminDashboard() {
         {/* ══════════════ OVERVIEW ══════════════ */}
         {activeTab === 'overview' && (
           <div className="space-y-6 animate-fade-in">
+
+            {/* Registration closed alert */}
+            {!regStatus.isOpen && (
+              <div className="flex items-center justify-between gap-4 p-4 rounded-2xl
+                              bg-red-50 border-2 border-red-200 animate-fade-in">
+                <div className="flex items-center gap-3">
+                  <Lock size={18} className="text-red-500 shrink-0" />
+                  <div>
+                    <p className="font-body font-semibold text-red-700 text-sm">
+                      Registration is currently paused
+                    </p>
+                    {regStatus.message && (
+                      <p className="font-body text-xs text-red-500 mt-0.5 italic">
+                        "{regStatus.message}"
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <button onClick={() => setActiveTab('registration')}
+                  className="font-body text-xs text-red-600 font-semibold underline
+                             underline-offset-2 hover:text-red-800 transition-colors shrink-0">
+                  Manage
+                </button>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {loading ? [...Array(4)].map((_,i) => <SkeletonCard key={i} />) : <>
-                <StatCard label="Total Students"  value={stats.totalStudents}   Icon={Users} />
-                <StatCard label="Active Teachers" value={stats.teachers}         Icon={GraduationCap} />
-                <StatCard label="Overall Rate"    value={`${stats.overallRate}%`} Icon={TrendingUp} accent />
-                <StatCard label="Holiday Sessions" value={stats.holidaySessions} Icon={CalendarDays} />
+                <StatCard label="Total Students"   value={stats.totalStudents}    Icon={Users} />
+                <StatCard label="Active Teachers"  value={stats.teachers}          Icon={GraduationCap} />
+                <StatCard label="Overall Rate"     value={`${stats.overallRate}%`} Icon={TrendingUp} accent />
+                <StatCard label="Holiday Sessions" value={stats.holidaySessions}   Icon={CalendarDays} />
               </>}
             </div>
 
@@ -545,6 +582,27 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
+
+        {/* ══════════════ ARCHIVE ══════════════ */}
+        {activeTab === 'archive' && (
+          <div className="animate-fade-in">
+            <SemesterArchivePanel />
+          </div>
+        )}
+
+        {/* ══════════════ REGISTRATION CONTROL ══════════════ */}
+        {activeTab === 'registration' && (
+          <div className="animate-fade-in space-y-5">
+            <div className="flex items-center gap-2 mb-2">
+              <Lock size={18} className="text-orange-400" />
+              <h3 className="font-display text-xl font-semibold text-brown-500">
+                Registration Control
+              </h3>
+            </div>
+            <RegistrationControlPanel />
+          </div>
+        )}
+
       </div>
 
       {/* ── Student detail modal ── */}
