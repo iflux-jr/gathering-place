@@ -2,49 +2,94 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isAuthed()   { return request.auth != null; }
-    function profile()    { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
-    function isAdmin()    { return isAuthed() && profile().role == 'admin'; }
-    function isTeacher()  { return isAuthed() && profile().role == 'teacher'; }
-    function myClass()    { return profile().assignedClass; }
+    // ── Core auth check — just checks Firebase Auth token, no Firestore read ──
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // ── Profile lookup — only called where strictly necessary ──
+    // Wrapped safely: if the get() fails, the whole expression is false
+    function userRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function userClass() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.assignedClass;
+    }
+
+    function isAdmin() {
+      return signedIn() && userRole() == 'admin';
+    }
+
+    function isTeacher() {
+      return signedIn() && userRole() == 'teacher';
+    }
 
     // ── Users ──
     match /users/{uid} {
-      allow read:   if isAuthed() && (request.auth.uid == uid || isAdmin());
+      allow read:   if signedIn() && (request.auth.uid == uid || isAdmin());
       allow write:  if isAdmin();
     }
 
-    // ── Students ──
+    // ── Active Students ──
     match /students/{studentId} {
       allow read, write: if isAdmin();
-      allow read:        if isTeacher() && resource.data.classes.hasAny([myClass()]);
-      allow create:      if isTeacher() && request.resource.data.classes.hasAny([myClass()]);
-      allow update:      if isAdmin(); // drops are admin-only writes
+      allow read:        if isTeacher() && resource.data.classes.hasAny([userClass()]);
+      allow create:      if isTeacher() && request.resource.data.classes.hasAny([userClass()]);
+      allow update:      if isAdmin();
     }
 
     // ── Attendance ──
     match /attendance/{docId} {
-      allow read, write:  if isAdmin();
-      allow read:         if isTeacher() && resource.data.className == myClass();
+      allow read, write:    if isAdmin();
+      allow read:           if isTeacher() && resource.data.className == userClass();
       allow create, update: if isTeacher()
-                           && request.resource.data.className == myClass()
-                           && request.resource.data.markedBy == request.auth.uid;
-      allow delete: if isAdmin();
+                            && request.resource.data.className == userClass()
+                            && request.resource.data.markedBy == request.auth.uid;
+      allow delete:         if isAdmin();
     }
 
     // ── Class Config ──
+    // Teachers must read this to get their semester config.
+    // Use signedIn() for read — no profile() call needed, reducing failure points.
     match /classConfig/{classId} {
-      allow read:  if isAuthed();   // teachers need to read their class config
+      allow read:  if signedIn();
       allow write: if isAdmin();
     }
 
     // ── Drop Requests ──
     match /dropRequests/{reqId} {
-      allow read:   if isAdmin() || (isTeacher() && resource.data.className == myClass());
-      allow create: if isTeacher() && request.resource.data.className == myClass()
+      allow read:   if isAdmin()
+                    || (isTeacher() && resource.data.className == userClass());
+      allow create: if isTeacher()
+                    && request.resource.data.className == userClass()
                     && request.resource.data.requestedBy == request.auth.uid;
-      allow update: if isAdmin(); // only admin can approve/reject
+      allow update: if isAdmin();
       allow delete: if isAdmin();
+    }
+
+    // ── System Settings ──
+    // Registration status must be readable by ALL signed-in users
+    // (teachers and admins both need it on RegisterPage load).
+    // Use signedIn() directly — no profile() lookup, no failure risk.
+    match /systemSettings/{docId} {
+      allow read:  if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── Student Archives — admin only ──
+    match /studentArchives/{archiveKey}/students/{studentId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ── Attendance Archives — admin only ──
+    match /attendanceArchives/{archiveKey}/records/{recordId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ── Archive Index — admin only ──
+    match /archiveIndex/{archiveKey} {
+      allow read, write: if isAdmin();
     }
   }
 }
