@@ -1,0 +1,56 @@
+# Deploys the site, Firestore rules and indexes to production after CI passes on main.
+# It does nothing until the FIREBASE_SERVICE_ACCOUNT_GATHERING_PLACE_D03E7 secret is added, and it can also be
+# started by hand from the Actions tab.
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      HAS_FIREBASE_SECRET: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GATHERING_PLACE_D03E7 != '' }}
+    steps:
+      - name: Skip when Firebase secrets are not set up yet
+        if: env.HAS_FIREBASE_SECRET != 'true'
+        run: echo "::notice::Add the FIREBASE_SERVICE_ACCOUNT_GATHERING_PLACE_D03E7 secret to enable production deploys (see README › Deployment)."
+      - uses: actions/checkout@v4
+        if: env.HAS_FIREBASE_SECRET == 'true'
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        if: env.HAS_FIREBASE_SECRET == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - if: env.HAS_FIREBASE_SECRET == 'true'
+        run: npm ci
+      - if: env.HAS_FIREBASE_SECRET == 'true'
+        run: npm run build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+      - name: Deploy hosting, rules and indexes
+        if: env.HAS_FIREBASE_SECRET == 'true'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GATHERING_PLACE_D03E7 }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json" \
+            npx firebase deploy --only hosting,firestore:rules,firestore:indexes \
+            --project gathering-place-d03e7 --non-interactive

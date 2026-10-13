@@ -25,7 +25,7 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = initAuth();
     return () => unsubscribe();
-  }, []);
+  }, [initAuth]);
 
   // Show splash while Firebase resolves initial auth state
   if (!initialized || loading) return <SplashScreen />;

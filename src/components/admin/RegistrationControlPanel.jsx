@@ -2,7 +2,7 @@
 // Admin UI for pausing/resuming student registration
 
 import { useState, useEffect } from 'react';
-import { ToggleLeft, ToggleRight, Lock, Unlock, AlertTriangle } from 'lucide-react';
+import { Lock, Unlock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { subscribeToRegistrationStatus, setRegistrationStatus } from '../../firebase/systemSettings';
 import { Alert, Spinner } from '../shared/UIComponents';

@@ -17,7 +17,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           style: {
             background:  '#5A3825',
             color:       '#F2E9DE',
-            fontFamily:  'DM Sans, sans-serif',
+            fontFamily:  'Plus Jakarta Sans, system-ui, sans-serif',
             fontSize:    '14px',
             borderRadius: '10px',
             padding:     '12px 16px',

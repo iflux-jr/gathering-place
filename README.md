@@ -323,7 +323,7 @@ Access control is enforced server-side via Firestore Security Rules. The client-
 | `users` | Read + Write | Read own | No access |
 | `students` | Full | Read + Create | No access |
 | `attendance` | Full | Read + Write | No access |
-| `classConfig` | Read + Write | Read only | Read only |
+| `classConfig` | Read + Write | Read + update own class's holidays | Read only |
 | `dropRequests` | Full | Create + Read | No access |
 | `systemSettings` | Read + Write | Read only | Read only |
 | `studentArchives` | Full | No access | No access |
@@ -392,7 +392,8 @@ gathering-place/
 ## Local Development Setup
 
 ### Prerequisites
-- Node.js 18 or higher
+- Node.js 22 (see `.nvmrc`)
+- Java 21 or newer, only for the security rules tests (the Firestore emulator needs it)
 - npm
 - A Firebase project (see [Firebase Setup](#firebase-setup))
 
@@ -420,6 +421,18 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 | Command | Description |
 |---|---|
+| `npm run dev` | Start local development server with HMR |
+| `npm run build` | Build optimised production bundle to `dist/` |
+| `npm run preview` | Preview the production build locally |
+| `npm run lint` | Run ESLint across all source files |
+| `npm run typecheck` | Type-check TypeScript files (JavaScript files are allowed alongside) |
+| `npm test` | Run unit tests with Vitest |
+| `npm run test:rules` | Start the Firestore emulator and test `firestore.rules` against it |
+| `npm run check` | Lint, type-check, unit tests and build in one go |
+
+New code is written in TypeScript; existing `.js`/`.jsx` files are converted as they are redesigned. Firestore document shapes live in `src/types/firestore.ts`.
+
+---|---|
 | `npm run dev` | Start local development server with HMR |
 | `npm run build` | Build optimised production bundle to `dist/` |
 | `npm run preview` | Preview the production build locally |
@@ -507,27 +520,28 @@ Log in as admin → Admin Dashboard → **Class Setup** tab → Configure each c
 
 ## Deployment
 
-The project is configured for deployment on Netlify.
+The project is moving from Netlify to **Firebase Hosting**, so the site, Firestore rules and indexes deploy together from one place. Until the steps below are done, Netlify keeps serving the site as before.
 
-### Option A — Netlify Dashboard (Recommended)
+### Continuous integration (GitHub Actions)
 
-1. Push the project to a GitHub repository.
-2. In the Netlify dashboard, click **Add new site → Import from Git**.
-3. Connect the repository. Netlify auto-detects `netlify.toml` and sets:
-   - Build command: `npm run build`
-   - Publish directory: `dist`
-4. Add all six `VITE_FIREBASE_*` environment variables under **Site settings → Environment variables**.
-5. Click **Deploy site**.
-6. After deploy, add your Netlify domain to Firebase Authorised Domains.
+`.github/workflows/ci.yml` runs on every pull request and every push to `main`: lint, type-check, unit tests, security rules tests against the Firestore emulator, and a production build. Once the secrets below exist, each pull request also gets a **preview link** (a Firebase Hosting preview channel that expires after 7 days), posted as a comment on the pull request.
 
-### Option B — Netlify CLI
+`.github/workflows/deploy.yml` deploys hosting, `firestore.rules` and `firestore.indexes.json` to production after CI passes on `main`. It can also be run by hand from the **Actions** tab. Both workflows skip deploying, with a notice, until the secrets exist.
 
-```bash
-npm install -g netlify-cli
-netlify login
-netlify init
-netlify deploy --prod
-```
+### One-time setup for Firebase Hosting deploys
+
+1. Install the Firebase CLI (`npm install -g firebase-tools`) and run `firebase login`.
+2. In the project folder, run `firebase init hosting:github`. When asked, choose the existing project `gathering-place-d03e7` and repository `iflux-jr/gathering-place`, and answer **No** to overwriting the workflow files and **No** to overwriting `firebase.json`. This creates a service account and stores it as a GitHub secret.
+3. In GitHub, open **Settings → Secrets and variables → Actions** and check that the CLI created a secret named `FIREBASE_SERVICE_ACCOUNT_GATHERING_PLACE_D03E7`. The workflows already use that name. If the CLI also wrote new workflow files, delete them; the ones in `.github/workflows/` cover the same jobs.
+4. Add the six web app values as secrets with the same names as in `.env`: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`.
+5. Merge to `main` (or run **Deploy** from the Actions tab). The site is then live at `https://gathering-place-d03e7.web.app`.
+6. Optional: connect a custom domain under Firebase Console → Hosting → Add custom domain, then retire the Netlify site.
+
+> **Note:** the production deploy also publishes `firestore.rules`. Rule changes are covered by `npm run test:rules` in CI before they can reach production.
+
+### Netlify (current, being retired)
+
+The `netlify.toml` build still works (Node 22, `npm run build`, publish `dist`) and keeps serving the site until you switch the domain over.
 
 ### SPA Routing
 

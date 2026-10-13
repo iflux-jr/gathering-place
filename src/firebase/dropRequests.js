@@ -2,8 +2,7 @@
 // Student drop request system
 
 import {
-  collection, addDoc, getDocs, doc, updateDoc,
-  query, where, orderBy, onSnapshot, serverTimestamp,
+  collection, addDoc, doc, updateDoc, query, where, orderBy, onSnapshot, serverTimestamp,
 } from 'firebase/firestore';
 import { db } from './config';
 import { updateStudent } from './students';
@@ -30,25 +29,7 @@ export async function createDropRequest({ studentId, studentName, className, req
 }
 
 /**
- * Admin approves a drop request — removes student from that class
- */
-export async function approveDropRequest(requestId, adminUid, student) {
-  // Soft-drop: remove className from student's classes array
-  const updatedClasses = (student.classes || []).filter(c => {
-    const req = _pendingRequests[requestId];
-    return req ? c !== req.className : true;
-  });
-
-  // Get the request first to know which class to remove
-  await updateDoc(doc(db, DROPS_COLLECTION, requestId), {
-    status:     'approved',
-    resolvedBy: adminUid,
-    resolvedAt: serverTimestamp(),
-  });
-}
-
-/**
- * Admin approves drop — pass className explicitly
+ * Admin approves a drop request — removes the student from that class
  */
 export async function approveDropRequestWithClass(requestId, adminUid, studentId, className, studentClasses) {
   const updatedClasses = (studentClasses || []).filter(c => c !== className);

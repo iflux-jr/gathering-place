@@ -3,14 +3,13 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Archive, ChevronDown, ChevronRight, Users, ClipboardList,
-  AlertTriangle, CheckCircle2, Loader2, RefreshCw,
+  Archive, ChevronDown, ChevronRight, ClipboardList, AlertTriangle, CheckCircle2, Loader2, RefreshCw,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { subscribeToAllClassConfigs }      from '../../firebase/classConfig';
 import { archiveClassSemester, getArchiveIndex, getArchivedStudents, getArchivedAttendance } from '../../firebase/archive';
 import { recordNewSemester, getActiveSemester }    from '../../firebase/systemSettings';
-import { ClassBadge, Alert, Spinner, Modal, AttendanceBadge } from '../shared/UIComponents';
+import { ClassBadge, Alert, Spinner, Modal } from '../shared/UIComponents';
 import { CLASSES, CLASS_LABELS } from '../../utils/constants';
 import { formatDateShort }       from '../../utils/dateUtils';
 import useAuthStore from '../../store/authStore';
@@ -251,7 +250,6 @@ export default function SemesterArchivePanel() {
                           {(() => {
                             const countable = archiveAttendance.filter(r => !r.isHoliday && r.present !== null);
                             const present   = countable.filter(r => r.present === true).length;
-                            const rate      = countable.length ? Math.round((present/countable.length)*100) : 0;
                             const holidays  = archiveAttendance.filter(r => r.isHoliday).length;
                             return (
                               <div className="grid grid-cols-4 gap-2">

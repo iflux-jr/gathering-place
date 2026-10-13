@@ -1,16 +1,12 @@
 // src/components/admin/DropRequestsPanel.jsx
 import { useState, useEffect } from 'react';
-import { UserMinus, Check, X, UserPlus, AlertTriangle } from 'lucide-react';
+import { UserMinus, Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
-  subscribeToAllDropRequests,
-  approveDropRequestWithClass,
-  rejectDropRequest,
-  adminDirectDrop,
-  reEnrollStudent,
+  subscribeToAllDropRequests, approveDropRequestWithClass, rejectDropRequest,
 } from '../../firebase/dropRequests';
 import { getStudentById } from '../../firebase/students';
-import { ClassBadge, DropRequestBadge, EmptyState, Modal, Alert } from '../shared/UIComponents';
+import { ClassBadge, DropRequestBadge, Modal, Alert } from '../shared/UIComponents';
 import useAuthStore from '../../store/authStore';
 
 export default function DropRequestsPanel({ students }) {
@@ -112,7 +108,7 @@ export default function DropRequestsPanel({ students }) {
             History ({resolved.length})
           </h3>
           <div className="card p-0 overflow-hidden">
-            {resolved.map((req, idx) => (
+            {resolved.map(req => (
               <div key={req.id}
                    className="flex items-center justify-between px-5 py-3.5
                               border-b border-cream-50 last:border-0">
