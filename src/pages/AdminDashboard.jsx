@@ -14,7 +14,6 @@ import { greeting } from '../lib/greeting';
 import {
   EmptyState, ClassBadge, AttendanceBadge, StatCard, SkeletonCard, SkeletonRow, Modal, PercentageRing, Alert,
 } from '../components/shared/UIComponents';
-import ClassConfigPanel        from '../components/admin/ClassConfigPanel';
 import DropRequestsPanel       from '../components/admin/DropRequestsPanel';
 import RegistrationControlPanel from '../components/admin/RegistrationControlPanel';
 import SemesterArchivePanel    from '../components/admin/SemesterArchivePanel';
@@ -25,7 +24,7 @@ import { adminDirectDrop } from '../firebase/dropRequests';
 import { subscribeToAllClassConfigs } from '../firebase/classConfig';
 import { subscribeToRegistrationStatus } from '../firebase/systemSettings';
 import { exportToCSV, formatStudentsForExport, formatAttendanceForExport } from '../utils/exportUtils';
-import { CLASSES, CLASS_LABELS, CHART_COLORS } from '../utils/constants';
+import { classColor, classLabel, useActiveClasses } from '../store/classStore';
 import useAuthStore from '../store/authStore';
 
 
@@ -34,7 +33,6 @@ const SECTION_TABS = {
   home:       ['overview', 'analytics'],
   students:   ['students'],
   attendance: ['attendance'],
-  classes:    ['config'],
   requests:   ['drops'],
   archive:    ['archive'],
   settings:   ['registration', 'teachers'],
@@ -44,7 +42,6 @@ const SECTION_TITLES = {
   home:       'Overview',
   students:   'Students',
   attendance: 'Attendance',
-  classes:    'Classes',
   requests:   'Drop requests',
   archive:    'Archive',
   settings:   'Settings',
@@ -53,6 +50,7 @@ const SECTION_TITLES = {
 const firstName = name => (name || '').trim().split(/\s+/)[0] || 'there';
 
 export default function AdminDashboard({ section = 'home' }) {
+  const CLASSES = useActiveClasses();
   const { profile, user } = useAuthStore();
   const navigate = useNavigate();
   const showTab = id => (SECTION_TABS[section] || SECTION_TABS.home).includes(id);
@@ -117,8 +115,8 @@ export default function AdminDashboard({ section = 'home' }) {
     const present     = clsAtt.filter(r => r.present === true).length;
     const rate        = clsAtt.length ? Math.round((present / clsAtt.length) * 100) : 0;
     const cfg         = classConfigs[cls.id];
-    return { name: cls.label, students: clsStudents.length, rate, sessions: cfg?.sessionsPerWeek || 1 };
-  }), [students, attendance, classConfigs]);
+    return { id: cls.id, name: cls.label, students: clsStudents.length, rate, sessions: cfg?.sessionsPerWeek || 1 };
+  }), [CLASSES, students, attendance, classConfigs]);
 
   const weeklyChartData = useMemo(() => {
     const weeks = [...new Set(attendance.map(r => r.semesterWeek).filter(Boolean))].sort((a,b)=>a-b).slice(-8);
@@ -409,7 +407,7 @@ export default function AdminDashboard({ section = 'home' }) {
                       tick={{ fontFamily:'Plus Jakarta Sans',fontSize:11,fill:'#5A3825' }} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={tooltipStyle} />
                     <Bar dataKey="students" radius={[0,8,8,0]}>
-                      {classChartData.map((_,i)=><Cell key={i} fill={CHART_COLORS[i%CHART_COLORS.length]}/>)}
+                      {classChartData.map((d,i)=><Cell key={i} fill={classColor(d.id).strong}/>)}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -427,8 +425,8 @@ export default function AdminDashboard({ section = 'home' }) {
                       <Pie data={classChartData.filter(c=>c.students>0)}
                         cx="50%" cy="50%" innerRadius={55} outerRadius={88}
                         dataKey="students" nameKey="name" paddingAngle={3}>
-                        {classChartData.filter(c=>c.students>0).map((_,i)=>(
-                          <Cell key={i} fill={CHART_COLORS[i%CHART_COLORS.length]} />
+                        {classChartData.filter(c=>c.students>0).map((d,i)=>(
+                          <Cell key={i} fill={classColor(d.id).strong} />
                         ))}
                       </Pie>
                       <Tooltip contentStyle={tooltipStyle} />
@@ -473,13 +471,6 @@ export default function AdminDashboard({ section = 'home' }) {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </div>
-        )}
-
-        {/* ══════════════ CLASS CONFIG ══════════════ */}
-        {showTab('config') && (
-          <div className="animate-fade-in">
-            <ClassConfigPanel />
           </div>
         )}
 
@@ -584,7 +575,7 @@ export default function AdminDashboard({ section = 'home' }) {
         {directDropModal && (
           <div className="space-y-4">
             <Alert type="error"
-              message={`This will immediately remove ${directDropModal.studentName} from ${CLASS_LABELS[directDropModal.className] || directDropModal.className}. Past attendance records are preserved.`} />
+              message={`This will immediately remove ${directDropModal.studentName} from ${classLabel(directDropModal.className)}. Past attendance records are preserved.`} />
             <div className="flex gap-3">
               <button onClick={()=>setDirectDropModal(null)} className="btn-outline flex-1">Cancel</button>
               <button onClick={handleDirectDrop} className="btn-danger flex-1">
@@ -644,7 +635,7 @@ function AdminStudentRow({ student, onView, onDirectDrop, index }) {
           </button>
           {(student.classes||[]).map(cls => (
             <button key={cls} onClick={() => onDirectDrop(cls)}
-              title={`Remove from ${CLASS_LABELS[cls]||cls}`}
+              title={`Remove from ${classLabel(cls)}`}
               className="w-8 h-8 rounded-xl flex items-center justify-center
                          bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600
                          transition-colors">
@@ -687,7 +678,7 @@ function AdminStudentRow({ student, onView, onDirectDrop, index }) {
           </button>
           {(student.classes||[]).map(cls => (
             <button key={cls} onClick={() => onDirectDrop(cls)}
-              title={`Remove from ${CLASS_LABELS[cls]||cls}`}
+              title={`Remove from ${classLabel(cls)}`}
               className="w-8 h-8 rounded-xl flex items-center justify-center
                          bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600
                          transition-colors">
@@ -750,7 +741,7 @@ function StudentDetailModal({ student, records, onDirectDrop }) {
               <button key={cls} onClick={()=>onDirectDrop(cls)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-200
                            text-red-600 text-xs font-semibold font-body hover:bg-red-50 transition-colors">
-                <UserMinus size={12}/> Remove from {CLASS_LABELS[cls]||cls}
+                <UserMinus size={12}/> Remove from {classLabel(cls)}
               </button>
             ))}
           </div>

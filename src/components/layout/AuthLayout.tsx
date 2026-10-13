@@ -3,10 +3,11 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Logo } from '../brand/Logo';
-import { CLASSES } from '../../utils/constants';
+import { useActiveClasses } from '../../store/classStore';
 import { getClassColor } from '../../theme/classes';
 
 export function AuthLayout({ title, description, children }: { title: string; description?: ReactNode; children: ReactNode }) {
+  const classes = useActiveClasses();
   return (
     <div className="grid min-h-dvh bg-canvas font-body text-ink lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <aside className="relative hidden overflow-hidden bg-ink p-10 text-white lg:flex lg:flex-col lg:justify-between">
@@ -16,9 +17,9 @@ export function AuthLayout({ title, description, children }: { title: string; de
             Every class, every week, in one place.
           </p>
           <ul className="flex max-w-md flex-wrap gap-2" aria-label="Classes">
-            {CLASSES.map(c => (
+            {classes.map(c => (
               <li key={c.id} className="rounded-full border-1.5 border-ink px-3 py-1.5 text-small font-semibold text-ink"
-                style={{ backgroundColor: getClassColor(c.id).surface }}>
+                style={{ backgroundColor: getClassColor(c.id, c.colorKey).surface }}>
                 {c.label}
               </li>
             ))}

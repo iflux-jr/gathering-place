@@ -8,7 +8,8 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 import { getArchiveIndex, getArchivedStudents } from './archive';
-import { CLASSES, MAX_CLASSES_PER_STUDENT } from '../utils/constants';
+import { MAX_CLASSES_PER_STUDENT } from '../utils/constants';
+import { parseCatalog } from '../lib/classCatalog';
 import { formatPhone, legacyPhoneVariants, phoneKey } from '../lib/phone';
 import { newRefCode } from '../lib/refCode';
 import type {
@@ -19,15 +20,14 @@ const REGISTRATIONS = 'registrations';
 const STATUS = 'registrationStatus';
 const PHONE_INDEX = 'phoneIndex';
 
-export interface ClassOption { id: string; label: string }
+export interface ClassOption { id: string; label: string; colorKey?: string }
 
 /** Classes people can sign up for: the admin's active list once it exists, otherwise the original eight */
 export async function getJoinableClasses(): Promise<ClassOption[]> {
   const snap = await getDoc(doc(db, 'systemSettings', 'classes'));
-  const ids: string[] | undefined = snap.exists() ? snap.data().activeIds : undefined;
-  if (!ids) return CLASSES.map(({ id, label }) => ({ id, label }));
-  const labels: Record<string, string> = Object.fromEntries(CLASSES.map(c => [c.id, c.label]));
-  return ids.map(id => ({ id, label: labels[id] ?? id }));
+  return parseCatalog(snap.exists() ? snap.data() : null)
+    .filter(c => c.status === 'active')
+    .map(({ id, label, colorKey }) => ({ id, label, colorKey }));
 }
 
 // ── Public ────────────────────────────────────────────────────────────────

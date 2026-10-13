@@ -14,8 +14,7 @@ import { isHolidaySession, subscribeToClassConfig } from '../firebase/classConfi
 import { subscribeToDropRequests } from '../firebase/dropRequests';
 import { subscribeToStudentsByClass } from '../firebase/students';
 import useAuthStore from '../store/authStore';
-import { getClassColor } from '../theme/classes';
-import { CLASS_LABELS } from '../utils/constants';
+import { useClassColor, useClassLabel } from '../store/classStore';
 import { currentSemesterWeek, formatDateShort, getSemesterStatus } from '../utils/dateUtils';
 import type { AttendanceRecord, ClassConfig, DropRequest, Student, UserProfile } from '../types/firestore';
 
@@ -53,7 +52,8 @@ function useLive<T>(subscribe: (cb: (v: T) => void, onError: () => void) => () =
 }
 
 function ClassView({ classId, uid, isAdmin }: { classId: string; uid: string; isAdmin: boolean }) {
-  const label = (CLASS_LABELS as Record<string, string>)[classId] ?? classId;
+  const label = useClassLabel(classId);
+  const color = useClassColor(classId);
   const config = useLive<ClassConfig | null>((cb, err) => subscribeToClassConfig(classId, cb, err), [classId]);
   const students = useLive<Student[]>((cb, err) => subscribeToStudentsByClass(classId, cb, err), [classId]);
   const drops = useLive<DropRequest[]>((cb, err) => subscribeToDropRequests(classId, cb, err), [classId]);
@@ -83,7 +83,6 @@ function ClassView({ classId, uid, isAdmin }: { classId: string; uid: string; is
     return done;
   }, [records.value]);
 
-  const color = getClassColor(classId);
   const loadError = config.error || students.error;
 
   return (

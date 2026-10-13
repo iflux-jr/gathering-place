@@ -7,7 +7,6 @@ import { Button, Card, ClassChip, ErrorState, Field, Input, Skeleton, buttonVari
 import { getRegistrationStatus } from '../firebase/registrations';
 import { formatRefCode, parseRefCode } from '../lib/refCode';
 import { formatDateShort } from '../utils/dateUtils';
-import { CLASS_LABELS } from '../utils/constants';
 import type { RegistrationStatusDoc } from '../types/firestore';
 
 type Lookup =
@@ -109,7 +108,7 @@ function Result({ code, doc }: { code: string; doc: RegistrationStatusDoc }) {
         </blockquote>
       )}
       <div className="flex flex-wrap gap-2" aria-label="Classes">
-        {doc.classes.map(c => <ClassChip key={c} classId={c} label={(CLASS_LABELS as Record<string, string>)[c] ?? c} />)}
+        {doc.classes.map(c => <ClassChip key={c} classId={c} />)}
       </div>
       <p className="text-small text-muted">Signed up {formatDateShort(doc.createdAt)}</p>
       {doc.status === 'declined' && (

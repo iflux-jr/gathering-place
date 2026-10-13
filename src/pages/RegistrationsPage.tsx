@@ -17,10 +17,8 @@ import useAuthStore from '../store/authStore';
 import { formatPhone } from '../lib/phone';
 import { formatRefCode } from '../lib/refCode';
 import { formatDateShort } from '../utils/dateUtils';
-import { CLASS_LABELS } from '../utils/constants';
 import type { Registration, RegistrationState } from '../types/firestore';
 
-const LABELS = CLASS_LABELS as Record<string, string>;
 
 function useRegistrations(status: RegistrationState) {
   const [rows, setRows] = useState<Registration[] | null>(null);
@@ -236,7 +234,7 @@ function RegistrationSummary({ r }: { r: Registration }) {
         <a href={`tel:+${r.phoneKey}`} className="underline-offset-4 hover:underline">{formatPhone(r.phoneKey)}</a>
       </p>
       <div className="flex flex-wrap gap-1.5">
-        {r.classes.map(c => <ClassChip key={c} classId={c} label={LABELS[c] ?? c} size="sm" />)}
+        {r.classes.map(c => <ClassChip key={c} classId={c} size="sm" />)}
       </div>
       {details && <p className="text-small text-muted">{details}</p>}
       <p className="text-caption text-muted">Signed up {formatDateShort(r.createdAt)}</p>
