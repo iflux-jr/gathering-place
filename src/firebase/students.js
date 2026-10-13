@@ -14,9 +14,9 @@ const STUDENTS_COLLECTION = 'students';
  * Real-time listener for students in a class
  * @param {string} className
  * @param {Function} callback
- * @returns {Function} - Unsubscribe function
+ * @returns {() => void} - Unsubscribe function
  */
-export function subscribeToStudentsByClass(className, callback) {
+export function subscribeToStudentsByClass(className, callback, onError) {
   const q = query(
     collection(db, STUDENTS_COLLECTION),
     where('classes', 'array-contains', className),
@@ -25,14 +25,14 @@ export function subscribeToStudentsByClass(className, callback) {
   return onSnapshot(q, snapshot => {
     const students = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     callback(students);
-  });
+  }, onError);
 }
 
 /**
  * Real-time listener for all students (admin)
  * @param {string|null} classFilter
  * @param {Function} callback
- * @returns {Function} - Unsubscribe function
+ * @returns {() => void} - Unsubscribe function
  */
 export function subscribeToAllStudents(classFilter, callback) {
   let q;

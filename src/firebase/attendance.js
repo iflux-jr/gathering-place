@@ -2,10 +2,12 @@
 // Updated attendance system: semester weeks, multi-session, holidays
 
 import {
-  collection, doc, query, where, orderBy, onSnapshot, serverTimestamp, writeBatch,
+  collection, doc, getDocs, query, where, orderBy, onSnapshot, serverTimestamp, writeBatch,
 } from 'firebase/firestore';
 import { db } from './config';
-import { getWeekNumber, getSemesterWeek } from '../utils/dateUtils';
+import {
+  getWeekNumber, getSemesterWeek, getSemesterStatus, parseLocalDate, semesterWeekStart,
+} from '../utils/dateUtils';
 
 const COL = 'attendance';
 
@@ -25,18 +27,26 @@ function buildId(studentId, classId, semWeek, sessionNumber) {
  * @param {number} sessionNumber   - 1 or 2 (etc.)
  * @param {Object} semester        - { startDate, endDate } from classConfig
  * @param {boolean} isHoliday      - mark the whole session as holiday
+ * @param {number} [semesterWeek]  - week being marked; defaults to the current week.
+ *                                   Earlier weeks can be caught up; future weeks can't.
+ * @returns {Promise<{ semWeek: number, sessionNumber: number, queued: boolean }>}
+ *   queued is true when the device is offline: the marks are saved on the device and
+ *   Firestore sends them once it reconnects.
  */
 export async function submitSessionAttendance(
-  records, className, markedBy, sessionNumber, semester, isHoliday = false
+  records, className, markedBy, sessionNumber, semester, isHoliday = false, semesterWeek = undefined
 ) {
   const now        = new Date();
-  const semWeek    = getSemesterWeek(now, semester);
-  if (!semWeek) {
-    // Never file attendance outside the configured semester window
-    throw new Error('Attendance can only be recorded during the active semester.');
+  const thisWeek   = getSemesterWeek(now, semester);
+  const lastWeek   = thisWeek ?? (getSemesterStatus(semester, now) === 'ended' ? semesterLength(semester) : null);
+  const semWeek    = semesterWeek ?? thisWeek;
+  if (!semWeek || !lastWeek || semWeek < 1 || semWeek > lastWeek) {
+    // Never file attendance outside the semester or for a week that hasn't happened yet
+    throw new Error('Attendance can only be recorded for this week or an earlier week of the semester.');
   }
-  const isoWeek    = getWeekNumber(now);
-  const year       = now.getFullYear();
+  const weekStart  = semesterWeekStart(semWeek, semester) ?? now;
+  const isoWeek    = getWeekNumber(weekStart);
+  const year       = weekStart.getFullYear();
   const batch      = writeBatch(db);
 
   for (const rec of records) {
@@ -59,8 +69,37 @@ export async function submitSessionAttendance(
     }, { merge: true });
   }
 
-  await batch.commit();
-  return { semWeek, sessionNumber };
+  // Offline, commit() only resolves once the server has the writes. They are already
+  // safe in the device's cache, so say so rather than keep the teacher on a spinner.
+  const committed = batch.commit();
+  const first = await Promise.race([
+    committed.then(() => 'sent'),
+    new Promise(resolve => setTimeout(() => resolve('slow'), OFFLINE_WAIT_MS)),
+  ]);
+  if (first === 'slow' && !navigator.onLine) {
+    committed.catch(err => console.error('Queued attendance was rejected when it synced', err));
+    return { semWeek, sessionNumber, queued: true };
+  }
+  await committed;
+  return { semWeek, sessionNumber, queued: false };
+}
+
+const OFFLINE_WAIT_MS = 4000;
+
+/** Weeks in a semester, counted from its dates */
+export function semesterLength(semester) {
+  if (!semester?.startDate || !semester?.endDate) return 0;
+  return getSemesterWeek(parseLocalDate(semester.endDate), semester) ?? 0;
+}
+
+/**
+ * One-time fetch of a class's attendance this semester, for per-student rates on the roster
+ */
+export async function getClassAttendance(className) {
+  const snap = await getDocs(query(collection(db, COL), where('className', '==', className)));
+  return snap.docs
+    .filter(d => !d.data().isHolidaySentinel)
+    .map(d => ({ id: d.id, ...d.data() }));
 }
 
 /**
@@ -81,7 +120,7 @@ export function subscribeToSessionAttendance(className, semWeek, sessionNumber, 
 /**
  * Real-time: all attendance for a class in a semester week (all sessions)
  */
-export function subscribeToWeekAttendance(className, semWeek, callback) {
+export function subscribeToWeekAttendance(className, semWeek, callback, onError) {
   const q = query(
     collection(db, COL),
     where('className',    '==', className),
@@ -92,7 +131,7 @@ export function subscribeToWeekAttendance(className, semWeek, callback) {
       .filter(d => !d.data().isHolidaySentinel)
       .map(d => ({ id: d.id, ...d.data() }))
     );
-  });
+  }, onError);
 }
 
 /**

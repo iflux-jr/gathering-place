@@ -34,10 +34,10 @@ export async function saveClassConfig(classId, config) {
 /**
  * Real-time listener for one class config
  */
-export function subscribeToClassConfig(classId, callback) {
+export function subscribeToClassConfig(classId, callback, onError) {
   return onSnapshot(doc(db, CONFIG_COLLECTION, classId), snap => {
     callback(snap.exists() ? { id: snap.id, ...snap.data() } : null);
-  });
+  }, onError);
 }
 
 /**

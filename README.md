@@ -79,12 +79,14 @@ Deployed on Netlify. Access requires a valid teacher or admin account created by
 Computer · Make-up · Wig Making · Barbing · Baking · Resin Art · Nail Tech · Tailoring
 
 ### Teacher Dashboard
-- Each teacher sees only the students enrolled in their assigned class.
-- Attendance is marked per session (up to the configured sessions-per-week limit).
-- Session tabs indicate status: completed, active, pending, or holiday.
-- A semester progress bar shows the current week within the 12-week semester.
-- Teachers can mark a session as a **Holiday / No Class**, which excludes it from all attendance percentage calculations.
-- Teachers can submit a **drop request** for a student, which enters a pending state awaiting admin approval.
+- Each teacher sees only the students enrolled in their assigned class, on a page built for phones: a large Present and Absent button per student, "everyone present" and "mark the rest" shortcuts, and search for big classes.
+- **Week picker:** this week opens by default; teachers can step back to catch up on an earlier week but not forward. After the semester ends, any week can still be completed.
+- **Sessions:** with more than one session a week, each session shows whether it's sent, still to do, or had no class.
+- **Nothing gets lost:** marks are saved on the device as they're made, so closing the page or losing signal keeps them until they're sent. The app keeps an offline copy of the class (Firestore's IndexedDB cache), and marks sent without signal are delivered when it returns.
+- **No class:** a session can be marked as having no class, which leaves it out of every attendance percentage, and undone.
+- **Students tab:** each student's attendance rate this semester, their phone number, and their other class.
+- **Drop requests:** teachers ask the admin to drop a student, follow the decision, and can withdraw a request while it's waiting.
+- Teachers don't add students; they share the sign-up link from **Invite students**.
 
 ### Admin Dashboard
 A tabbed interface providing full system access:
