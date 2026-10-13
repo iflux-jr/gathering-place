@@ -10,7 +10,7 @@ import { subscribeToAllClassConfigs }      from '../../firebase/classConfig';
 import { archiveClassSemester, getArchiveIndex, getArchivedStudents, getArchivedAttendance } from '../../firebase/archive';
 import { recordNewSemester, getActiveSemester }    from '../../firebase/systemSettings';
 import { ClassBadge, Alert, Spinner, Modal } from '../shared/UIComponents';
-import { CLASSES, CLASS_LABELS } from '../../utils/constants';
+import { classLabel, useActiveClasses } from '../../store/classStore';
 import { formatDateShort }       from '../../utils/dateUtils';
 import useAuthStore from '../../store/authStore';
 
@@ -18,6 +18,7 @@ import useAuthStore from '../../store/authStore';
 const CONFIRM_WORD = 'ARCHIVE';
 
 export default function SemesterArchivePanel() {
+  const CLASSES = useActiveClasses();
   const { user }    = useAuthStore();
   const [configs,   setConfigs]   = useState({});
   const [archives,  setArchives]  = useState([]);   // archive index
@@ -86,7 +87,7 @@ export default function SemesterArchivePanel() {
       await recordNewSemester(semNum, cfg.semester.label, user.uid);
 
       toast.success(
-        `Archived ${result.studentCount} students and ${result.attendanceCount} records for ${CLASS_LABELS[archiveModal]}`
+        `Archived ${result.studentCount} students and ${result.attendanceCount} records for ${classLabel(archiveModal)}`
       );
       setArchiveModal(null);
       setConfirmInput('');
@@ -293,7 +294,7 @@ export default function SemesterArchivePanel() {
               </div>
               <ul className="space-y-1.5">
                 {[
-                  `Archive all students enrolled in ${CLASS_LABELS[archiveModal] || archiveModal}`,
+                  `Archive all students enrolled in ${classLabel(archiveModal)}`,
                   'Archive all attendance records for this class',
                   'Clear the active student list for this class',
                   'Cancel any pending drop requests',

@@ -3,7 +3,7 @@
 
 import Papa from 'papaparse';
 import type { AttendanceRecord, DateLike, Student } from '../types/firestore';
-import { CLASS_LABELS } from './constants';
+import { classLabel as catalogLabel } from '../store/classStore';
 
 /**
  * Download data as a CSV file
@@ -33,7 +33,7 @@ function formatDay(value: DateLike): string {
   return d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString('en-NG') : '—';
 }
 
-const classLabel = (id: string) => (CLASS_LABELS as Record<string, string>)[id] || id;
+const classLabel = (id: string) => catalogLabel(id);
 
 /**
  * Format students for CSV export

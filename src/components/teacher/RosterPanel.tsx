@@ -7,10 +7,8 @@ import { Button, ClassChip, Dialog, EmptyState, ErrorState, Field, LoadingList, 
 import { getClassAttendance } from '../../firebase/attendance';
 import { createDropRequest } from '../../firebase/dropRequests';
 import { isHolidaySession } from '../../firebase/classConfig';
-import { CLASS_LABELS } from '../../utils/constants';
+import { useClassLookup } from '../../store/classStore';
 import type { AttendanceRecord, ClassConfig, DropRequest, Student } from '../../types/firestore';
-
-const LABELS = CLASS_LABELS as Record<string, string>;
 
 interface RosterPanelProps {
   classId: string;
@@ -27,6 +25,7 @@ export function RosterPanel({ classId, uid, config, students, drops, canRequestD
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [dropping, setDropping] = useState<Student | null>(null);
+  const classes = useClassLookup();
 
   // Read once when the tab opens, rather than listening to every mark all semester
   useEffect(() => {
@@ -75,7 +74,7 @@ export function RosterPanel({ classId, uid, config, students, drops, canRequestD
                       <Phone size={13} aria-hidden="true" /> {s.phone}
                     </a>
                   )}
-                  {other.map(c => <ClassChip key={c} classId={c} label={`Also ${LABELS[c] ?? c}`} size="sm" />)}
+                  {other.map(c => <ClassChip key={c} classId={c} label={`Also ${classes.label(c)}`} size="sm" />)}
                 </p>
               </div>
               <div className="grid gap-1">

@@ -50,7 +50,7 @@ export function ClassPicker({ options, value, onChange, error, disabled }: Class
                   selected ? 'border-ink shadow-sm' : 'border-transparent',
                   blocked && 'cursor-not-allowed opacity-45',
                 )}
-                style={{ backgroundColor: getClassColor(c.id).surface }}
+                style={{ backgroundColor: getClassColor(c.id, c.colorKey).surface }}
               >
                 <span className="pr-7">{c.label}</span>
                 {selected && (

@@ -86,7 +86,9 @@ service cloud.firestore {
       allow read:  if signedIn();
       // The public sign-up form needs to know whether sign-ups are open and which classes exist
       allow get:   if docId in ['registration', 'classes'];
-      allow write: if isAdmin();
+      // The class list must keep activeIds, which the sign-up rules check classes against
+      allow write: if isAdmin()
+        && (docId != 'classes' || (request.resource.data.classes is list && request.resource.data.activeIds is list));
     }
 
     // ── Public self-registration ──

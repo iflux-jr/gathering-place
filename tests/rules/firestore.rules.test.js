@@ -247,6 +247,30 @@ describe('public registration', () => {
   });
 });
 
+describe('class list', () => {
+  const list = { classes: [{ id: 'computer', label: 'Computer', colorKey: 'sky', status: 'active', order: 0 }], activeIds: ['computer'] };
+
+  it('lets an admin edit it', async () => {
+    await assertSucceeds(setDoc(doc(as(ADMIN), 'systemSettings', 'classes'), list));
+  });
+
+  it('refuses a list without the active IDs the sign-up rules need', async () => {
+    await assertFails(setDoc(doc(as(ADMIN), 'systemSettings', 'classes'), { classes: list.classes }));
+  });
+
+  it('refuses teachers and signed-out visitors, who can only read it', async () => {
+    await assertFails(setDoc(doc(as(TEACHER), 'systemSettings', 'classes'), list));
+    await assertFails(setDoc(doc(anon(), 'systemSettings', 'classes'), list));
+    await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'systemSettings', 'classes'), list));
+    await assertSucceeds(getDoc(doc(anon(), 'systemSettings', 'classes')));
+  });
+
+  it('lets an admin assign a teacher to a class', async () => {
+    await assertSucceeds(updateDoc(doc(as(ADMIN), 'users', OTHER), { assignedClass: 'computer' }));
+    await assertFails(updateDoc(doc(as(TEACHER), 'users', TEACHER), { assignedClass: 'baking' }));
+  });
+});
+
 describe('drop requests', () => {
   const pending = { studentId: 'stu-1', studentName: 'Amara', className: 'computer', requestedBy: TEACHER, reason: '', status: 'pending' };
   beforeEach(async () => {

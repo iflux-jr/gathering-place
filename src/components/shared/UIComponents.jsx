@@ -3,6 +3,7 @@ import {
   Loader2, AlertCircle, CheckCircle2, Info, X,
   Check, Minus, TrendingUp, TrendingDown,
 } from 'lucide-react';
+import { ClassChip } from '../ui';
 
 export function Spinner({ size = 'md', className = '' }) {
   const sizes = { sm: 'w-4 h-4', md: 'w-6 h-6', lg: 'w-8 h-8', xl: 'w-12 h-12' };
@@ -59,39 +60,9 @@ export function Alert({ type = 'info', message, className = '' }) {
   );
 }
 
+// Kept for the older admin panels; follows the admin's class list and colours
 export function ClassBadge({ className: cls, small = false }) {
-  const colorMap = {
-    'computer':   'bg-blue-100   text-blue-800   border-blue-200',
-    'make-up':    'bg-pink-100   text-pink-800   border-pink-200',
-    'wig-making': 'bg-purple-100 text-purple-800 border-purple-200',
-    'barbing':    'bg-green-100  text-green-800  border-green-200',
-    'baking':     'bg-yellow-100 text-yellow-800 border-yellow-200',
-    'resin-art':  'bg-orange-100 text-orange-800 border-orange-200',
-    'nail-tech':  'bg-rose-100   text-rose-800   border-rose-200',
-    'tailoring':  'bg-teal-100   text-teal-800   border-teal-200',
-  };
-  const dotMap = {
-    'computer':   'bg-blue-500',   'make-up':    'bg-pink-500',
-    'wig-making': 'bg-purple-500', 'barbing':    'bg-green-500',
-    'baking':     'bg-yellow-500', 'resin-art':  'bg-orange-500',
-    'nail-tech':  'bg-rose-500',   'tailoring':  'bg-teal-500',
-  };
-  const labelMap = {
-    'computer':   'Computer',   'make-up':    'Make-up',
-    'wig-making': 'Wig Making', 'barbing':    'Barbing',
-    'baking':     'Baking',     'resin-art':  'Resin Art',
-    'nail-tech':  'Nail Tech',  'tailoring':  'Tailoring',
-  };
-  const colors = colorMap[cls] || 'bg-gray-100 text-gray-700 border-gray-200';
-  const dot    = dotMap[cls]   || 'bg-gray-400';
-  const label  = labelMap[cls] || cls;
-  return (
-    <span className={`inline-flex items-center gap-1.5 border rounded-full font-body font-semibold
-      ${small ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-xs'} ${colors}`}>
-      <span className={`inline-block rounded-full shrink-0 ${dot} ${small ? 'w-1.5 h-1.5' : 'w-2 h-2'}`} />
-      {label}
-    </span>
-  );
+  return <ClassChip classId={cls} size={small ? 'sm' : 'md'} />;
 }
 
 export function AttendanceBadge({ present, size = 'sm', isHoliday = false }) {

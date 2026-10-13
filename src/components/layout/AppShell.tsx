@@ -11,7 +11,7 @@ import useAuthStore from '../../store/authStore';
 import { logoutUser } from '../../firebase/users';
 import { subscribeToPendingDropRequests } from '../../firebase/dropRequests';
 import { subscribeToPendingRegistrationCount } from '../../firebase/registrations';
-import { CLASS_LABELS } from '../../utils/constants';
+import { useClassLabel } from '../../store/classStore';
 import { ADMIN_NAV, ADMIN_PRIMARY, INVITE_ITEM, REGISTER_ITEM, TEACHER_NAV, type NavItem } from './navigation';
 
 type Badges = Partial<Record<NonNullable<NavItem['badge']>, number>>;
@@ -20,7 +20,7 @@ function useNavItems() {
   const profile = useAuthStore(s => s.profile);
   const isAdmin = profile?.role === 'admin';
   const teaches = !!profile?.assignedClass;
-  const classLabel = teaches ? (CLASS_LABELS as Record<string, string>)[profile.assignedClass] ?? profile.assignedClass : '';
+  const classLabel = useClassLabel(profile?.assignedClass ?? '');
 
   const items: NavItem[] = [];
   if (isAdmin) items.push(...ADMIN_NAV);

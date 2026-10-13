@@ -4,6 +4,8 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import useAuthStore from './store/authStore';
+import useClassStore from './store/classStore';
+import { subscribeToClassCatalog } from './firebase/classes';
 
 // Guards and frame
 import ProtectedRoute from './components/shared/ProtectedRoute';
@@ -18,6 +20,7 @@ const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
 const AddStudentPage     = lazy(() => import('./pages/AddStudentPage'));
 const InvitePage         = lazy(() => import('./pages/InvitePage'));
 const RegistrationsPage  = lazy(() => import('./pages/RegistrationsPage'));
+const ClassesPage        = lazy(() => import('./pages/ClassesPage'));
 const JoinPage           = lazy(() => import('./pages/JoinPage'));
 const StatusPage         = lazy(() => import('./pages/StatusPage'));
 const TeacherPage        = lazy(() => import('./pages/TeacherPage'));
@@ -25,7 +28,7 @@ const AdminDashboard     = lazy(() => import('./pages/AdminDashboard'));
 const NotFoundPage       = lazy(() => import('./pages/NotFoundPage'));
 const StyleGuidePage     = lazy(() => import('./pages/StyleGuidePage'));
 
-const ADMIN_SECTIONS = ['students', 'attendance', 'classes', 'requests', 'archive', 'settings'] as const;
+const ADMIN_SECTIONS = ['students', 'attendance', 'requests', 'archive', 'settings'] as const;
 
 export default function App() {
   const { initAuth, loading, initialized } = useAuthStore();
@@ -34,6 +37,11 @@ export default function App() {
     const unsubscribe = initAuth();
     return () => unsubscribe();
   }, [initAuth]);
+  // The class list is public, so it loads for signed-out pages too
+  useEffect(() => subscribeToClassCatalog(
+    classes => useClassStore.setState({ classes, loaded: true, error: false }),
+    () => useClassStore.setState({ loaded: true, error: true }),
+  ), []);
 
   // Show splash while Firebase resolves initial auth state
   if (!initialized || loading) return <SplashScreen />;
@@ -59,6 +67,7 @@ export default function App() {
               <Route path="/register" element={<AddStudentPage />} />
               <Route path="/admin" element={<AdminDashboard section="home" />} />
               <Route path="/admin/registrations" element={<RegistrationsPage />} />
+              <Route path="/admin/classes" element={<ClassesPage />} />
               {ADMIN_SECTIONS.map(s => (
                 <Route key={s} path={`/admin/${s}`} element={<AdminDashboard section={s} />} />
               ))}

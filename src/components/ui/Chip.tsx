@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from 'react';
 import { cn } from '../../lib/cn';
 import { getClassColor } from '../../theme/classes';
-import { CLASS_LABELS } from '../../utils/constants';
+import useClassStore from '../../store/classStore';
 import { colors } from '../../theme/tokens.js';
 
 const chipBase = 'inline-flex items-center gap-1.5 rounded-full border-1.5 border-ink font-body font-semibold whitespace-nowrap';
@@ -54,8 +54,9 @@ interface ClassChipProps {
 
 /** Class name on its class colour */
 export function ClassChip({ classId, label, colorKey, size = 'md', className }: ClassChipProps) {
-  const color = getClassColor(classId, colorKey);
-  const name = label ?? (CLASS_LABELS as Record<string, string>)[classId] ?? classId;
+  const entry = useClassStore(s => s.classes.find(c => c.id === classId));
+  const color = getClassColor(classId, colorKey ?? entry?.colorKey);
+  const name = label ?? entry?.label ?? classId;
   return <Chip size={size} tone={color.surface} className={cn('text-ink', className)}>{name}</Chip>;
 }
 
