@@ -20,7 +20,7 @@ const InvitePage         = lazy(() => import('./pages/InvitePage'));
 const RegistrationsPage  = lazy(() => import('./pages/RegistrationsPage'));
 const JoinPage           = lazy(() => import('./pages/JoinPage'));
 const StatusPage         = lazy(() => import('./pages/StatusPage'));
-const TeacherDashboard   = lazy(() => import('./pages/TeacherDashboard'));
+const TeacherPage        = lazy(() => import('./pages/TeacherPage'));
 const AdminDashboard     = lazy(() => import('./pages/AdminDashboard'));
 const NotFoundPage       = lazy(() => import('./pages/NotFoundPage'));
 const StyleGuidePage     = lazy(() => import('./pages/StyleGuidePage'));
@@ -52,7 +52,7 @@ export default function App() {
         {/* Signed in: everything inside the app frame */}
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
-            <Route path="/teacher" element={<TeacherDashboard />} />
+            <Route path="/teacher" element={<TeacherPage />} />
             <Route path="/invite"  element={<InvitePage />} />
 
             <Route element={<AdminRoute />}>

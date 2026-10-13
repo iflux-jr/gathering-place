@@ -246,3 +246,38 @@ describe('public registration', () => {
     await assertSucceeds(updateDoc(doc(as(ADMIN), 'registrationStatus', 'ABCD2345'), { status: 'accepted' }));
   });
 });
+
+describe('drop requests', () => {
+  const pending = { studentId: 'stu-1', studentName: 'Amara', className: 'computer', requestedBy: TEACHER, reason: '', status: 'pending' };
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async ctx => {
+      await setDoc(doc(ctx.firestore(), 'dropRequests', 'req-1'), pending);
+      await setDoc(doc(ctx.firestore(), 'dropRequests', 'req-done'), { ...pending, status: 'approved' });
+    });
+  });
+  const cancel = (uid, id = 'req-1') => updateDoc(doc(as(uid), 'dropRequests', id), {
+    status: 'cancelled', cancelledBy: uid, cancelledAt: serverTimestamp(),
+  });
+
+  it('lets a teacher withdraw their own pending request', async () => {
+    await assertSucceeds(cancel(TEACHER));
+  });
+
+  it("refuses withdrawing someone else's request", async () => {
+    await assertFails(cancel(OTHER));
+  });
+
+  it('refuses withdrawing a request that was already decided', async () => {
+    await assertFails(cancel(TEACHER, 'req-done'));
+  });
+
+  it('refuses a teacher approving their own request', async () => {
+    await assertFails(updateDoc(doc(as(TEACHER), 'dropRequests', 'req-1'), { status: 'approved' }));
+  });
+
+  it('refuses changing anything else while withdrawing', async () => {
+    await assertFails(updateDoc(doc(as(TEACHER), 'dropRequests', 'req-1'), {
+      status: 'cancelled', cancelledBy: TEACHER, reason: 'edited',
+    }));
+  });
+});

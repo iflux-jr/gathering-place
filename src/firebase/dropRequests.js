@@ -29,6 +29,17 @@ export async function createDropRequest({ studentId, studentName, className, req
 }
 
 /**
+ * Teacher withdraws their own request while it is still pending
+ */
+export async function cancelDropRequest(requestId, uid) {
+  await updateDoc(doc(db, DROPS_COLLECTION, requestId), {
+    status:      'cancelled',
+    cancelledBy: uid,
+    cancelledAt: serverTimestamp(),
+  });
+}
+
+/**
  * Admin approves a drop request — removes the student from that class
  */
 export async function approveDropRequestWithClass(requestId, adminUid, studentId, className, studentClasses) {
@@ -95,7 +106,7 @@ export async function reEnrollStudent(studentId, className, adminUid, studentCla
 /**
  * Real-time listener for drop requests — teacher sees their own class
  */
-export function subscribeToDropRequests(className, callback) {
+export function subscribeToDropRequests(className, callback, onError) {
   const q = query(
     collection(db, DROPS_COLLECTION),
     where('className', '==', className),
@@ -103,7 +114,7 @@ export function subscribeToDropRequests(className, callback) {
   );
   return onSnapshot(q, snap => {
     callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-  });
+  }, onError);
 }
 
 /**

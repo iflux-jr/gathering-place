@@ -4,7 +4,9 @@
 import { initializeApp } from 'firebase/app';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
-import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
+import {
+  connectFirestoreEmulator, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+} from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
@@ -28,7 +30,12 @@ if (recaptchaKey && import.meta.env.VITE_USE_EMULATORS !== 'true') {
 
 // Export auth and firestore instances
 export const auth = getAuth(app);
-export const db   = getFirestore(app);
+// Keep a copy of what each device has read in IndexedDB, so a teacher with patchy signal
+// can still open the register and mark it; writes made offline are sent on reconnect.
+// Browsers without IndexedDB (some private modes) fall back to memory automatically.
+export const db   = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+});
 
 // Local development against the Firebase emulators (npm run emulators); never set in production builds
 if (import.meta.env.VITE_USE_EMULATORS === 'true') {
