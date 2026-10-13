@@ -22,14 +22,16 @@ const InvitePage         = lazy(() => import('./pages/InvitePage'));
 const RegistrationsPage  = lazy(() => import('./pages/RegistrationsPage'));
 const ClassesPage        = lazy(() => import('./pages/ClassesPage'));
 const AdminHomePage      = lazy(() => import('./pages/AdminHomePage'));
+const StudentsPage       = lazy(() => import('./pages/StudentsPage'));
+const AttendancePage     = lazy(() => import('./pages/AttendancePage'));
+const DropRequestsPage   = lazy(() => import('./pages/DropRequestsPage'));
+const ArchivePage        = lazy(() => import('./pages/ArchivePage'));
+const SettingsPage       = lazy(() => import('./pages/SettingsPage'));
 const JoinPage           = lazy(() => import('./pages/JoinPage'));
 const StatusPage         = lazy(() => import('./pages/StatusPage'));
 const TeacherPage        = lazy(() => import('./pages/TeacherPage'));
-const AdminDashboard     = lazy(() => import('./pages/AdminDashboard'));
 const NotFoundPage       = lazy(() => import('./pages/NotFoundPage'));
 const StyleGuidePage     = lazy(() => import('./pages/StyleGuidePage'));
-
-const ADMIN_SECTIONS = ['students', 'attendance', 'requests', 'archive', 'settings'] as const;
 
 export default function App() {
   const { initAuth, loading, initialized } = useAuthStore();
@@ -69,9 +71,11 @@ export default function App() {
               <Route path="/admin" element={<AdminHomePage />} />
               <Route path="/admin/registrations" element={<RegistrationsPage />} />
               <Route path="/admin/classes" element={<ClassesPage />} />
-              {ADMIN_SECTIONS.map(s => (
-                <Route key={s} path={`/admin/${s}`} element={<AdminDashboard section={s} />} />
-              ))}
+              <Route path="/admin/students" element={<StudentsPage />} />
+              <Route path="/admin/attendance" element={<AttendancePage />} />
+              <Route path="/admin/requests" element={<DropRequestsPage />} />
+              <Route path="/admin/archive" element={<ArchivePage />} />
+              <Route path="/admin/settings" element={<SettingsPage />} />
             </Route>
           </Route>
         </Route>
