@@ -120,14 +120,14 @@ export function subscribeToDropRequests(className, callback, onError) {
 /**
  * Real-time listener for all drop requests (admin)
  */
-export function subscribeToAllDropRequests(callback) {
+export function subscribeToAllDropRequests(callback, onError) {
   const q = query(
     collection(db, DROPS_COLLECTION),
     orderBy('requestedAt', 'desc')
   );
   return onSnapshot(q, snap => {
     callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-  });
+  }, onError);
 }
 
 /**
