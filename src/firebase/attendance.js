@@ -2,7 +2,7 @@
 // Updated attendance system: semester weeks, multi-session, holidays
 
 import {
-  collection, doc, getDocs, query, where, orderBy, onSnapshot, serverTimestamp, writeBatch,
+  collection, doc, getDocs, query, where, onSnapshot, serverTimestamp, writeBatch,
 } from 'firebase/firestore';
 import { db } from './config';
 import { countMarks, summaryId } from '../lib/summaries';
@@ -148,30 +148,13 @@ export function subscribeToWeekAttendance(className, semWeek, callback, onError)
 }
 
 /**
- * Real-time: all attendance records (admin)
+ * One-time: a student's attendance this semester, all classes (admin student detail)
  */
-export function subscribeToAllAttendance(callback) {
-  const q = query(collection(db, COL), orderBy('year', 'desc'), orderBy('semesterWeek', 'desc'));
-  return onSnapshot(q, snap => {
-    callback(snap.docs
-      .filter(d => !d.data().isHolidaySentinel)
-      .map(d => ({ id: d.id, ...d.data() }))
-    );
-  });
-}
-
-/**
- * Real-time: attendance for a student (history panel)
- */
-export function subscribeToStudentAttendance(studentId, callback) {
-  const q = query(collection(db, COL), where('studentId', '==', studentId));
-  return onSnapshot(q, snap => {
-    callback(snap.docs
-      .filter(d => !d.data().isHolidaySentinel)
-      .map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => (b.semesterWeek - a.semesterWeek) || (b.sessionNumber - a.sessionNumber))
-    );
-  });
+export async function getStudentAttendance(studentId) {
+  const snap = await getDocs(query(collection(db, COL), where('studentId', '==', studentId)));
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.semesterWeek - a.semesterWeek) || (b.sessionNumber - a.sessionNumber));
 }
 
 /**

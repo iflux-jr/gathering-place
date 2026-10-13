@@ -34,7 +34,7 @@ export function subscribeToStudentsByClass(className, callback, onError) {
  * @param {Function} callback
  * @returns {() => void} - Unsubscribe function
  */
-export function subscribeToAllStudents(classFilter, callback) {
+export function subscribeToAllStudents(classFilter, callback, onError) {
   let q;
   if (classFilter) {
     q = query(
@@ -48,7 +48,7 @@ export function subscribeToAllStudents(classFilter, callback) {
   return onSnapshot(q, snapshot => {
     const students = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     callback(students);
-  });
+  }, onError);
 }
 
 /**
