@@ -1,6 +1,6 @@
 # The Gathering Place — Attendance Management System
 
-A full-stack, production-ready web application for managing student attendance across multiple vocational training classes. Built for a vocational skills centre running 8 concurrent programmes, replacing a manual paper-based process with a real-time digital system accessible from any device.
+A web app for the YSA vocational classes at The Gathering Place: students sign up themselves, admins review them, and teachers take attendance on their phones. It replaces paper registers with one live record that works on any device, even with patchy signal.
 
 ---
 
@@ -19,6 +19,7 @@ A full-stack, production-ready web application for managing student attendance a
 - [Environment Variables](#environment-variables)
 - [Firebase Setup](#firebase-setup)
 - [Deployment](#deployment)
+- [Upgrading from the previous version](#upgrading-from-the-previous-version)
 - [Key Engineering Decisions](#key-engineering-decisions)
 
 ---
@@ -27,7 +28,7 @@ A full-stack, production-ready web application for managing student attendance a
 
 The Gathering Place Attendance System is a role-based attendance management platform designed for vocational training institutions. It supports two user roles — **Admin** and **Teacher** — each with distinct permissions and views. The system handles student registration, multi-session weekly attendance, semester lifecycle management, student drop requests, holiday tracking, and historical data archiving across semesters.
 
-The application is fully mobile-responsive, operates in real time using Firebase Firestore listeners, and is deployed on Netlify with Firebase as the backend.
+The app is designed for phones first, updates live through Firestore listeners, and runs entirely on Firebase (Hosting, Authentication and Firestore) on the free Spark plan, with no server code.
 
 ---
 
@@ -54,7 +55,7 @@ This application addresses all of these by providing a structured, cloud-backed,
 
 ## Live Application
 
-Deployed on Netlify. Access requires a valid teacher or admin account created by the system administrator.
+Deployed on Firebase Hosting (moving from Netlify, see [Deployment](#deployment)). Staff sign in with an account an admin creates; students only use the public sign-up and status pages.
 
 ---
 
@@ -75,8 +76,11 @@ Deployed on Netlify. Access requires a valid teacher or admin account created by
 - **Pausing sign-ups** in Settings closes the public form and shows the admin's message.
 - **Spam protection:** a hidden honeypot field, strict security rules for signed-out writes, and Firebase App Check with reCAPTCHA v3 when configured.
 
-### The 8 Vocational Classes
-Computer · Make-up · Wig Making · Barbing · Baking · Resin Art · Nail Tech · Tailoring
+### Classes
+- Admins manage classes on the **Classes** page: add a class with a name and colour, and set its semester dates, sessions per week and teacher.
+- Every class has its own colour, used on chips, cards and charts across the app.
+- Removing a class is guarded. It's blocked while it has active students (archive first), a teacher, or waiting sign-ups. A class with past attendance or archives is **retired**, which keeps its history and stops new sign-ups, and can be restored. A class nobody used is deleted.
+- The list starts as the original eight: Computer, Make-up, Wig Making, Barbing, Baking, Resin Art, Nail Tech and Tailoring.
 
 ### Teacher Dashboard
 - Each teacher sees only the students enrolled in their assigned class, on a page built for phones: a large Present and Absent button per student, "everyone present" and "mark the rest" shortcuts, and search for big classes.
@@ -88,42 +92,41 @@ Computer · Make-up · Wig Making · Barbing · Baking · Resin Art · Nail Tech
 - **Drop requests:** teachers ask the admin to drop a student, follow the decision, and can withdraw a request while it's waiting.
 - Teachers don't add students; they share the sign-up link from **Invite students**.
 
-### Admin Dashboard
-A tabbed interface providing full system access:
-
-| Tab | Purpose |
+### Admin
+| Page | Purpose |
 |---|---|
-| Overview | System-wide stats, class enrollment summary, attendance trend chart |
-| Students | Full student list with filtering, search, direct drop, and per-student attendance history |
-| Attendance | All attendance records, filterable by class and semester week, with CSV export |
-| Analytics | Bar and pie charts for enrollment distribution, attendance rates, and weekly trends |
-| Class Setup | Configure semester dates and sessions-per-week for each class |
-| Drop Requests | Approve or reject teacher-submitted drop requests with optional rejection reason |
-| Archive | Archive a class's semester data and browse historical archives |
-| Registration | Pause or resume student registration with a custom message |
-| Teachers | View all teacher and admin accounts |
+| Home | What's waiting (sign-ups, drop requests, classes missing a semester or teacher), headline numbers, which registers each class has sent this week, and attendance by week |
+| Sign-ups | Review the public sign-up queue, singly or in bulk |
+| Students | Search, filter by class, export CSV; a student's attendance and removing them from a class |
+| Attendance | One class and week as a register grid; export a class's semester as CSV |
+| Classes | Add, edit, retire, restore and remove classes; semester, sessions and teacher |
+| Drop requests | Approve, or decline with a note the teacher sees |
+| Archive | End a class's semester, browse and export past semesters |
+| Settings | Open or pause sign-ups; add staff, change roles and classes, remove access |
+
+**Staff accounts** are created in the app: the admin enters a name, email, role and class, and the new person gets an email to set their password. Removing access deletes their profile, so they can open nothing and see a "No access" screen. (The sign-in account itself can only be deleted in the Firebase console, which is needed only to reuse that email.)
 
 ### Semester Lifecycle
 - Each class has an independently configured semester with a start date, end date, and label.
 - Attendance can only be recorded within the active semester window.
 - Week numbers are semester-relative (Week 1 = first week of semester, not ISO calendar week).
-- When a semester ends, the admin archives the class: all student and attendance records are copied to a permanent subcollection archive, then removed from the active collections. The operation runs in batches of 400 documents to respect Firestore's write limits.
-- Archived data is browsable from the Admin Dashboard and is never deleted.
+- When a semester ends, the admin archives the class: all student and attendance records are copied to a permanent subcollection archive, then removed from the active collections. The operation runs in batches of 200 (each can take two writes) to respect Firestore's limit of 500 writes per batch.
+- Archived data is browsable and exportable from **Archive** and is never deleted.
 
 ### Attendance Integrity
 - Each attendance record has a deterministic document ID (`studentId_classId_W{week}_S{session}`), preventing duplicates at the database level.
 - Holiday sessions are stored with an `isHoliday` flag and excluded from attendance percentage denominators.
 - Attendance percentage is calculated as `present sessions / (total sessions − holiday sessions)`.
-- All records are retained indefinitely. Archiving copies records; it does not delete originals until the copy is confirmed.
+- All records are retained. Archiving copies records first and removes the originals only after the copy is written; an interrupted archive can be run again to finish.
 
-### Real-Time Updates
-All dashboard views use Firestore `onSnapshot` listeners. When a teacher marks attendance, the admin dashboard reflects the change instantly without a page refresh.
+### Live updates and cost
+Pages listen only to what they show. The admin home reads one small total per session (`attendanceSummary`), which teachers write alongside each register, rather than every attendance record; the Attendance page loads one class and week at a time; a student's history loads when it's opened. This keeps reads low on the Spark plan's daily quota.
 
 ### Data Export
-Filtered student lists and attendance records can be exported to CSV using PapaParse.
+Student lists, a class's semester attendance and archived semesters can be exported to CSV. The export code loads only when someone exports.
 
 ### QR Codes
-After registering a student, a QR code is generated encoding their unique student ID, suitable for printing and future check-in integrations.
+**Invite students** shows a QR code and link to the sign-up form, optionally with a class picked in advance, to print or share on WhatsApp.
 
 ---
 
@@ -134,17 +137,18 @@ After registering a student, a QR code is generated encoding their unique studen
 | Frontend framework | React 18 | Component-based UI |
 | Build tool | Vite 5 | Fast development server and production bundler |
 | Styling | Tailwind CSS 3 | Utility-first CSS with custom design tokens |
-| State management | Zustand | Lightweight global state for auth |
+| State management | Zustand | Auth state and the live class list |
 | Routing | React Router v6 | Client-side navigation and route guards |
 | Backend / Database | Firebase Firestore | NoSQL real-time document database |
 | Authentication | Firebase Authentication | Email/password auth with JWT tokens |
-| Hosting | Netlify | Static site hosting with SPA redirect rules |
-| Charts | Recharts | Bar and pie charts for analytics |
+| Hosting | Firebase Hosting | Static hosting, preview links per pull request |
+| UI primitives | Radix UI | Accessible dialogs, tabs and checkboxes |
 | Icons | Lucide React | Consistent icon set |
-| QR codes | qrcode.react | Student QR code generation |
+| QR codes | qrcode.react | Sign-up link QR codes |
 | CSV export | PapaParse | Client-side CSV serialisation |
 | Notifications | react-hot-toast | Non-blocking toast messages |
-| Fonts | Fraunces + Plus Jakarta Sans | Display and body typography via Google Fonts |
+| Fonts | Outfit + Plus Jakarta Sans | Headings and body text via Google Fonts |
+| Language | TypeScript (gradual) | New code is TypeScript; older `.js` files convert as they change |
 
 ---
 
@@ -153,33 +157,29 @@ After registering a student, a QR code is generated encoding their unique studen
 ```
 Browser (React SPA)
     │
-    ├── React Router         → Page-level routing + role guards
-    ├── Zustand (authStore)  → Auth state (user, profile, role)
+    ├── React Router          → Lazy-loaded pages + role guards
+    ├── Zustand
+    │     ├── authStore       → User, profile, role, "no access"
+    │     └── classStore      → Live class list (falls back to the original eight)
     │
     ├── Pages
-    │     ├── LoginPage
-    │     ├── RegisterPage
-    │     ├── TeacherDashboard
-    │     └── AdminDashboard
-    │           ├── ClassConfigPanel
-    │           ├── DropRequestsPanel
-    │           ├── RegistrationControlPanel
-    │           └── SemesterArchivePanel
+    │     ├── Public: Join (/join), Status (/status), Login
+    │     ├── Teacher: TeacherPage (register, students, drop requests), Invite
+    │     └── Admin: Home, Sign-ups, Students, Attendance, Classes,
+    │               Drop requests, Archive, Settings, Add student
     │
     └── Firebase SDK
-          ├── Authentication  → Login / logout / auth state
-          └── Firestore       → All data reads and writes
-                ├── Real-time listeners (onSnapshot)
-                └── Batched writes (writeBatch)
+          ├── Authentication  → Sign-in; a second throwaway app creates staff accounts
+          ├── App Check       → reCAPTCHA v3, when configured
+          └── Firestore       → Persistent offline cache, listeners and batched writes
 
-Firebase (Google Cloud)
-    ├── Authentication       → User identity and JWT tokens
-    └── Firestore            → Document database
-          ├── Security Rules → Server-side access control
-          └── Composite Indexes → Query performance
+Firebase (Google Cloud, Spark plan)
+    ├── Hosting              → The built site
+    ├── Authentication       → Staff identities
+    └── Firestore            → Data, security rules and composite indexes
 ```
 
-The application is a single-page application (SPA). All routing happens client-side. Netlify is configured with a catch-all redirect (`/* → /index.html`) so direct URL access and page refreshes work correctly.
+There are no Cloud Functions. Everything the server must guarantee (who can write what, one registration per phone number, totals that add up) is enforced by the security rules, which are tested in CI.
 
 ---
 
@@ -203,12 +203,41 @@ Active students in the current semester.
 ```
 id:               string   — Firestore auto-ID
 name:             string
-phone:            string   — unique within active collection
+phone:            string   — as entered
+phoneKey:         string   — digits-only international form, e.g. '2348031234567'
 gender:           string | null
 classes:          string[] — max 2 class IDs
+ward:             string   — optional
+email:            string   — optional
+registrationId:   string   — reference code of the sign-up they came from, if any
 createdAt:        Timestamp
 reRegistered:     boolean  — true if returning from archive
 previousArchive:  string   — archive key of previous semester
+droppedFrom:      map      — classId → { droppedAt, droppedBy, requestId }
+```
+
+**`registrations/{refCode}`** (admin only)
+A public sign-up waiting for review, or reviewed. The document ID is the 8-character reference code.
+```
+name, phone, phoneKey, gender, classes, ward, email, consent: true
+status:        'pending' | 'accepted' | 'declined'
+createdAt:     Timestamp
+reviewedBy, reviewedAt, declineReason, shareReason, studentId
+```
+
+**`registrationStatus/{refCode}`**
+What the public status page shows: readable by anyone who has the code, never listable.
+```
+status:  'pending' | 'accepted' | 'declined'
+classes, createdAt, reviewedAt
+note:    string   — only when the admin chose to share a decline reason
+```
+
+**`phoneIndex/{phoneKey}`**
+One document per number in use, so the rules can refuse a second sign-up or student with the same number.
+```
+{ kind: 'pending', registrationId }   — held by a waiting sign-up
+{ kind: 'student', studentId }        — held by an active student
 ```
 
 **`attendance/{studentId_classId_W{week}_S{session}}`**
@@ -250,6 +279,15 @@ updatedAt:  Timestamp
 updatedBy:  string
 ```
 
+**`attendanceSummary/{classId_W{week}_S{session}}`**
+One total per class session, written by the teacher in the same batch as the register. The admin home reads these instead of every record.
+```
+classId, semesterWeek, sessionNumber
+present, absent, total   — total == present + absent (enforced by the rules)
+markedBy:  string
+updatedAt: Timestamp
+```
+
 **`dropRequests/{id}`**
 Teacher-submitted requests to remove a student from a class.
 ```
@@ -275,6 +313,15 @@ openedAt:  Timestamp
 updatedBy: string
 updatedAt: Timestamp
 ```
+
+**`systemSettings/classes`**
+The admin's class list. Readable by anyone (the sign-up form needs it); written by admins.
+```
+classes: Array<{ id, label, colorKey, status: 'active' | 'retired', order }>
+activeIds: string[]   — the rules check sign-up classes against this
+updatedAt, updatedBy
+```
+Until this document exists, the app and the rules use the original eight classes.
 
 **`systemSettings/activeSemester`**
 Tracks the current semester number globally.
@@ -319,7 +366,9 @@ Access control is enforced server-side via Firestore Security Rules. The client-
 
 4. **Attendance integrity** — teachers can only write attendance records where `className == userClass()` and `markedBy == request.auth.uid`. They cannot write to another teacher's class or impersonate another user.
 
-5. **Archives are admin-only** — all archive subcollections are locked to admin reads and writes. Teachers have no access to historical data from past semesters.
+5. **Signed-out writes are tightly shaped** — a sign-up is a batch of three documents (`registrations`, `registrationStatus`, `phoneIndex`) that the rules check against each other: same reference code, a valid phone key, active classes, sign-ups open, and no existing claim on the number.
+
+6. **Archives are admin-only** — all archive subcollections are locked to admin reads and writes. Teachers have no access to historical data from past semesters.
 
 ### Permission Matrix
 
@@ -328,8 +377,9 @@ Access control is enforced server-side via Firestore Security Rules. The client-
 | `users` | Read + Write | Read own | No access | No access |
 | `students` | Full | Read | No access | No access |
 | `attendance` | Full | Read + Write | No access | No access |
+| `attendanceSummary` | Full | Write own class's totals | No access | No access |
 | `classConfig` | Read + Write | Read + update own class's holidays | Read only | No access |
-| `dropRequests` | Full | Create + Read | No access | No access |
+| `dropRequests` | Full | Create + Read; withdraw own pending | No access | No access |
 | `systemSettings` | Read + Write | Read only | Read only | Read `registration` and `classes` |
 | `registrations` | Read + Update | No access | No access | Create a valid pending sign-up |
 | `registrationStatus` | Read + Update | No access | No access | Read one by code; create with a sign-up |
@@ -344,56 +394,38 @@ Access control is enforced server-side via Firestore Security Rules. The client-
 
 ```
 gathering-place/
-├── public/
-│   └── favicon.svg
+├── .github/workflows/        — CI (checks, rules tests, preview links) and production deploy
+├── public/                   — Icons and manifest
+├── scripts/
+│   └── migrate-registrations.mjs — One-time phone index backfill (dry run by default)
 ├── src/
+│   ├── assets/brand/         — Placeholder logos (replace with the real ones)
 │   ├── components/
-│   │   ├── admin/
-│   │   │   ├── ClassConfigPanel.jsx       — Semester dates + sessions per week
-│   │   │   ├── DropRequestsPanel.jsx      — Approve / reject drop requests
-│   │   │   ├── RegistrationControlPanel.jsx — Pause / resume registration
-│   │   │   └── SemesterArchivePanel.jsx   — Archive + browse past semesters
-│   │   └── shared/
-│   │       ├── AdminRoute.jsx             — Admin-only route guard
-│   │       ├── Navbar.jsx                 — Top navigation with role badges
-│   │       ├── ProtectedRoute.jsx         — Auth route guard
-│   │       ├── SplashScreen.jsx           — Initial loading screen
-│   │       └── UIComponents.jsx           — Design system primitives
-│   ├── firebase/
-│   │   ├── archive.js                     — Semester archiving operations
-│   │   ├── attendance.js                  — Attendance CRUD + real-time listeners
-│   │   ├── classConfig.js                 — Class configuration + holidays
-│   │   ├── config.js                      — Firebase app initialisation
-│   │   ├── dropRequests.js                — Drop request lifecycle
-│   │   ├── students.js                    — Student CRUD + re-registration
-│   │   ├── systemSettings.js              — Registration control + semester tracking
-│   │   └── users.js                       — Auth + user profile operations
-│   ├── pages/
-│   │   ├── AdminDashboard.jsx             — 9-tab admin interface
-│   │   ├── LoginPage.jsx                  — Authentication page
-│   │   ├── NotFoundPage.jsx               — 404
-│   │   ├── RegisterPage.jsx               — Student registration with archive lookup
-│   │   └── TeacherDashboard.jsx           — Session-based attendance marking
-│   ├── store/
-│   │   └── authStore.js                   — Zustand auth state + role helpers
-│   ├── styles/
-│   │   └── globals.css                    — Tailwind base + custom design system
-│   └── utils/
-│       ├── constants.js                   — Classes, roles, limits
-│       ├── dateUtils.js                   — Semester week calculation utilities
-│       └── exportUtils.js                 — CSV formatting helpers
-├── .env.example                           — Environment variable template
-├── .gitignore
-├── firestore.indexes.json                 — Composite index definitions
-├── firestore.rules                        — Server-side security rules
-├── firebase.json                          — Firebase project config
-├── netlify.toml                           — Netlify build + redirect config
-├── index.html                             — App entry point + Google Fonts
-├── package.json
-├── postcss.config.js
-├── tailwind.config.js
-└── vite.config.js
+│   │   ├── brand/            — <Logo/>
+│   │   ├── layout/           — AppShell (sidebar, bottom bar), PageHeader, auth and public layouts
+│   │   ├── registration/     — ClassPicker
+│   │   ├── shared/           — Route guards, splash screen
+│   │   ├── teacher/          — Register, roster, drop requests, week picker
+│   │   └── ui/               — Design system: Button, Card, Chip, Dialog, Field, Tabs, states…
+│   ├── firebase/             — One module per area: attendance, classes, registrations,
+│   │                           staff, summaries, archive, students, users, settings
+│   ├── lib/                  — Pure, unit-tested helpers: phone numbers, reference codes,
+│   │                           class catalog, attendance totals, drafts
+│   ├── pages/                — One file per route
+│   ├── store/                — authStore, classStore
+│   ├── theme/                — Design tokens (colours, type, radii) and class colours
+│   ├── types/firestore.ts    — Firestore document shapes
+│   └── utils/                — Dates, CSV export, constants
+├── tests/
+│   ├── unit/                 — Vitest
+│   └── rules/                — Security rules tests against the emulator
+├── firestore.rules
+├── firestore.indexes.json
+├── firebase.json             — Hosting, rules, indexes and emulator config
+└── netlify.toml              — Kept until Netlify is retired
 ```
+
+The design system is documented live at `/styleguide`.
 
 ---
 
@@ -437,14 +469,9 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 | `npm test` | Run unit tests with Vitest |
 | `npm run test:rules` | Start the Firestore emulator and test `firestore.rules` against it |
 | `npm run check` | Lint, type-check, unit tests and build in one go |
+| `npm run emulators` | Start local Auth and Firestore emulators; run the app against them with `VITE_USE_EMULATORS=true npm run dev` |
 
 New code is written in TypeScript; existing `.js`/`.jsx` files are converted as they are redesigned. Firestore document shapes live in `src/types/firestore.ts`.
-
----|---|
-| `npm run dev` | Start local development server with HMR |
-| `npm run build` | Build optimised production bundle to `dist/` |
-| `npm run preview` | Preview the production build locally |
-| `npm run lint` | Run ESLint across all source files |
 
 ---
 
@@ -468,7 +495,7 @@ VITE_USE_EMULATORS=
 
 These values are found in Firebase Console → Project Settings → Your apps → Web app config.
 
-> **Important:** The `.env` file must never be committed to version control. It is listed in `.gitignore`. For Netlify deployments, these values must be added separately via the Netlify dashboard under Site Settings → Environment Variables. A redeploy is required after adding them.
+> **Important:** The `.env` file must never be committed to version control. It is listed in `.gitignore`. For deploys, the same values are GitHub Actions secrets (see [Deployment](#deployment)).
 
 ---
 
@@ -484,7 +511,7 @@ Firebase Console → Authentication → Sign-in method → Enable **Email/Passwo
 Firebase Console → Firestore Database → Create database → Start in **production mode** → Select a region.
 
 ### 4. Add Your Domain to Authorised Domains
-Firebase Console → Authentication → Settings → Authorised domains → Add your Netlify domain (e.g. `yoursite.netlify.app`). Without this step, login will fail on the deployed site.
+Firebase Console → Authentication → Settings → Authorised domains. `gathering-place-d03e7.web.app` and `.firebaseapp.com` are there already; add any custom domain, and your Netlify domain while it's still in use. Without this, sign-in fails on that domain.
 
 ### 5. Deploy Security Rules and Indexes
 
@@ -502,32 +529,24 @@ firebase deploy --only firestore:rules,firestore:indexes
 
 ### 6. Create the First Admin Account
 
-In Firebase Console → Authentication → Users → Add user. Copy the generated UID.
+Only the first admin is made by hand. In Firebase Console → Authentication → Users → Add user, then copy the UID.
 
 In Firestore → `users` collection → Add document with the UID as the document ID:
 
 ```
-id:            <uid>
 name:          "Your Name"
 email:         "your@email.com"
 role:          "admin"
 assignedClass: null
-createdAt:     (server timestamp)
 ```
 
-### 7. Create Teacher Accounts
+### 7. Add Staff
 
-Repeat step 6 for each teacher, setting:
-```
-role:          "teacher"
-assignedClass: "<class-id>"
-```
+Sign in as that admin → **Settings** → **Add staff**. Enter their name, email, role and class; they get an email with a link to set their password.
 
-**Available class IDs:** `computer` · `make-up` · `wig-making` · `barbing` · `baking` · `resin-art` · `nail-tech` · `tailoring`
+### 8. Set Up Classes
 
-### 8. Configure Classes
-
-Log in as admin → Admin Dashboard → **Class Setup** tab → Configure each class with semester dates and sessions per week.
+**Classes** → **Edit** on each class to set semester dates, sessions per week and teacher. Add or remove classes here too.
 
 ### 9. Index existing students' phone numbers (once, when upgrading to self-registration)
 
@@ -538,7 +557,7 @@ The public sign-up form relies on a `phoneIndex` collection to refuse numbers th
    ```bash
    GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json node scripts/migrate-registrations.mjs --project <your-project-id>
    ```
-3. Fix any listed problems in the app, then run it again with `--apply`. Running it twice is safe.
+3. Fix any listed problems in the app, then run it again with `--apply`. Running it twice is safe. Always look at the dry run's output before applying.
 
 Until this has run, accepting a sign-up still checks existing students by phone, so duplicates are caught at review rather than at sign-up.
 
@@ -590,6 +609,17 @@ This ensures that navigating directly to a URL like `/admin` or `/teacher` retur
 
 ---
 
+## Upgrading from the previous version
+
+Existing data keeps working as it is: students, attendance, class settings, drop requests and archives are read unchanged, and the class list falls back to the original eight until an admin edits it. After the new version is deployed (rules and indexes included, which the deploy workflow does):
+
+1. **Sign in as an admin and press "Recalculate totals"** on the home page once. It builds the per-session totals from attendance taken before the update. It reads the current attendance once and writes only to `attendanceSummary`.
+2. **Index existing phone numbers** with the script in [Firebase Setup, step 9](#9-index-existing-students-phone-numbers-once-when-upgrading-to-self-registration): dry run first, then `--apply`. Until then, duplicates are still caught when a sign-up is accepted.
+3. **Teachers' accounts are unchanged.** Teachers no longer add students; send them to **Invite students** to share the sign-up link.
+4. Optionally turn on [spam protection](#10-spam-protection-optional-recommended).
+
+---
+
 ## Key Engineering Decisions
 
 ### Deterministic Attendance Document IDs
@@ -599,7 +629,7 @@ Rather than using Firestore's auto-generated IDs, each attendance record uses a 
 The system calculates week numbers relative to the configured semester start date rather than using ISO calendar week numbers. This ensures that Week 1 always means the first week of the current intake, regardless of when in the calendar year the semester begins. A student who joins in March and one who joins in September both experience consistent week numbering within their respective semesters.
 
 ### Batched Archive Operations
-Archiving a semester involves copying and deleting potentially hundreds of documents. Firestore's `writeBatch` has a limit of 500 operations per batch. The archive service processes documents in chunks of 400 with a separate batch commit per chunk, keeping the operation well within limits regardless of class size.
+Archiving a semester involves copying and deleting potentially hundreds of documents. Firestore's `writeBatch` has a limit of 500 operations per batch. The archive service processes documents in chunks of 200 (some take two writes) with a separate batch commit per chunk, keeping the operation well within limits regardless of class size.
 
 ### Security Rule Design — Avoiding Cascading `get()` Failures
 Early versions of the security rules used a `profile()` helper that called `get(users/{uid})` inside every rule evaluation. This caused a race condition: immediately after login, if the `get()` inside the rule evaluation timed out before the user document was confirmed readable, the entire rule returned `permission-denied`, crashing real-time listeners. The fix separates concerns — `signedIn()` uses only `request.auth != null` (a pure token check) for read-only public data like system settings and class config, while `isAdmin()` and `isTeacher()` (which call `get()`) are reserved for write operations and class-scoped reads where role distinction is strictly required.
@@ -607,9 +637,21 @@ Early versions of the security rules used a `profile()` helper that called `get(
 ### Per-Class Archiving
 Rather than a single global "end semester" button, archiving operates per class. This reflects the operational reality of vocational centres where different programmes may run on different calendars. The Computer class can archive and begin a new intake while the Tailoring class is still in Week 8 of its current semester.
 
+### Totals Written With the Register
+Without Cloud Functions there's nothing on the server to keep running totals. Instead the teacher's register batch also writes that session's total, and the rules check it belongs to their class and adds up. If totals ever drift (for example after editing records by hand), **Recalculate totals** rebuilds them from the records.
+
+### Public Sign-Up Without a Server
+A sign-up is three documents written in one batch, each checked by the rules against the others. Creating `phoneIndex/{phoneKey}` fails if the number is already claimed, which makes "one person per number" a database guarantee rather than a race-prone client check. Reference codes avoid look-alike characters (no 0/O, 1/I/L) so they can be read over the phone.
+
+### Classes as Data, With Safe Removal
+The class list lives in one document, edited in a transaction so two admins can't overwrite each other. Removing a class never destroys history: a class with attendance or archives is retired instead of deleted, and removal is blocked while students, a teacher or waiting sign-ups depend on it.
+
+### Staff Accounts Without Admin SDK
+Creating a user with the client SDK signs in as that user. The app creates staff accounts on a throwaway second Firebase app instance, so the admin's own session is untouched, and sends a password-reset email so the admin never knows the password.
+
 ### Dual Admin/Teacher Role
 A user with `role: 'admin'` and a non-null `assignedClass` gains access to both the Admin Dashboard and the Teacher Dashboard for their assigned class. The system detects this combination in the auth store and renders both navigation links and a dual role badge in the UI. The Firestore rules grant admin users full write access to attendance, covering both their admin and teaching responsibilities without requiring a separate teacher account.
 
 ---
 
-*Built with React, Firebase, Tailwind CSS, and Vite. Deployed on Netlify.*
+*Built with React, Firebase, Tailwind CSS and Vite.*
