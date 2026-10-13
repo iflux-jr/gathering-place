@@ -111,6 +111,12 @@ export async function archiveClassSemester(
     batch.delete(doc(db, 'attendance', rec.id));
   });
 
+  // Session totals go with the records they summarise
+  const sumSnap = await getDocs(query(collection(db, 'attendanceSummary'), where('classId', '==', classId)));
+  await batchWrite(sumSnap.docs.map(d => d.id), (batch, id) => {
+    batch.delete(doc(db, 'attendanceSummary', id));
+  });
+
   // ── 7. Cancel pending drop requests for this class ──────────────────
   onProgress('Cancelling pending drop requests…');
   const dropSnap = await getDocs(

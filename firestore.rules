@@ -49,6 +49,19 @@ service cloud.firestore {
       allow delete:         if isAdmin();
     }
 
+    // ── Attendance totals per session, for the admin home ──
+    // A teacher writes their own class's totals in the same batch as the register.
+    match /attendanceSummary/{summaryId} {
+      allow read, write: if isAdmin();
+      allow create, update: if isTeacher()
+                            && request.resource.data.classId == userClass()
+                            && request.resource.data.markedBy == request.auth.uid
+                            && summaryId == request.resource.data.classId + '_W' + string(request.resource.data.semesterWeek)
+                                            + '_S' + string(request.resource.data.sessionNumber)
+                            && request.resource.data.present is int && request.resource.data.absent is int
+                            && request.resource.data.total == request.resource.data.present + request.resource.data.absent;
+    }
+
     // ── Class Config ──
     // Teachers must read this to get their semester config.
     // Use signedIn() for read — no profile() call needed, reducing failure points.

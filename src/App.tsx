@@ -21,6 +21,7 @@ const AddStudentPage     = lazy(() => import('./pages/AddStudentPage'));
 const InvitePage         = lazy(() => import('./pages/InvitePage'));
 const RegistrationsPage  = lazy(() => import('./pages/RegistrationsPage'));
 const ClassesPage        = lazy(() => import('./pages/ClassesPage'));
+const AdminHomePage      = lazy(() => import('./pages/AdminHomePage'));
 const JoinPage           = lazy(() => import('./pages/JoinPage'));
 const StatusPage         = lazy(() => import('./pages/StatusPage'));
 const TeacherPage        = lazy(() => import('./pages/TeacherPage'));
@@ -65,7 +66,7 @@ export default function App() {
 
             <Route element={<AdminRoute />}>
               <Route path="/register" element={<AddStudentPage />} />
-              <Route path="/admin" element={<AdminDashboard section="home" />} />
+              <Route path="/admin" element={<AdminHomePage />} />
               <Route path="/admin/registrations" element={<RegistrationsPage />} />
               <Route path="/admin/classes" element={<ClassesPage />} />
               {ADMIN_SECTIONS.map(s => (

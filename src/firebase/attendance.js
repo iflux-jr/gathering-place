@@ -5,6 +5,7 @@ import {
   collection, doc, getDocs, query, where, orderBy, onSnapshot, serverTimestamp, writeBatch,
 } from 'firebase/firestore';
 import { db } from './config';
+import { countMarks, summaryId } from '../lib/summaries';
 import {
   getWeekNumber, getSemesterWeek, getSemesterStatus, parseLocalDate, semesterWeekStart,
 } from '../utils/dateUtils';
@@ -67,6 +68,18 @@ export async function submitSessionAttendance(
       submittedAt:   serverTimestamp(),
       updatedAt:     serverTimestamp(),
     }, { merge: true });
+  }
+
+  // The session's totals, for the admin home (see src/lib/summaries.ts)
+  if (!isHoliday) {
+    batch.set(doc(db, 'attendanceSummary', summaryId(className, semWeek, sessionNumber)), {
+      classId: className,
+      semesterWeek: semWeek,
+      sessionNumber,
+      ...countMarks(records.map(r => r.present)),
+      markedBy,
+      updatedAt: serverTimestamp(),
+    });
   }
 
   // Offline, commit() only resolves once the server has the writes. They are already
