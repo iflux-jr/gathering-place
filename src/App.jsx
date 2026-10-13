@@ -1,7 +1,7 @@
 // src/App.jsx
 // Root component — sets up routing and auth initialization
 
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import useAuthStore from './store/authStore';
 
@@ -19,6 +19,9 @@ import AdminRoute       from './components/shared/AdminRoute';
 // Loading screen
 import SplashScreen     from './components/shared/SplashScreen';
 
+// Design system reference — loaded only when visited
+const StyleGuidePage = lazy(() => import('./pages/StyleGuidePage'));
+
 export default function App() {
   const { initAuth, loading, initialized } = useAuthStore();
 
@@ -34,6 +37,7 @@ export default function App() {
     <Routes>
       {/* Public */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/styleguide" element={<Suspense fallback={<SplashScreen />}><StyleGuidePage /></Suspense>} />
 
       {/* Protected — any authenticated user */}
       <Route element={<ProtectedRoute />}>

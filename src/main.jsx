@@ -5,29 +5,27 @@ import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import App from './App';
 import './styles/globals.css';
+import { colors } from './theme/tokens.js';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <App />
       <Toaster
-        position="top-right"
+        position="top-center"
         toastOptions={{
           duration: 4000,
           style: {
-            background:  '#5A3825',
-            color:       '#F2E9DE',
-            fontFamily:  'Plus Jakarta Sans, system-ui, sans-serif',
-            fontSize:    '14px',
-            borderRadius: '10px',
-            padding:     '12px 16px',
+            background:   colors.ink.DEFAULT,
+            color:        '#FFFFFF',
+            fontFamily:   'Plus Jakarta Sans, system-ui, sans-serif',
+            fontSize:     '15px',
+            fontWeight:   600,
+            borderRadius: '999px',
+            padding:      '10px 18px',
           },
-          success: {
-            iconTheme: { primary: '#E57A06', secondary: '#F2E9DE' },
-          },
-          error: {
-            iconTheme: { primary: '#ef4444', secondary: '#F2E9DE' },
-          },
+          success: { iconTheme: { primary: colors.lime.DEFAULT, secondary: colors.ink.DEFAULT } },
+          error:   { iconTheme: { primary: colors.flame[500], secondary: colors.ink.DEFAULT } },
         }}
       />
     </BrowserRouter>
