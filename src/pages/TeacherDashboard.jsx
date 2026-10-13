@@ -4,7 +4,6 @@ import {
   Search, Send, CheckSquare, XSquare, Users, CheckCircle2, XCircle, BarChart2, School, ShieldCheck, CalendarOff, UserMinus, AlertTriangle, Calendar,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Navbar   from '../components/shared/Navbar';
 import {
   PageLoader, EmptyState, ClassBadge, AttendanceBadge, StatCard, Alert, Modal, Spinner, SessionPill, SemesterProgressBar, DropRequestBadge,
 } from '../components/shared/UIComponents';
@@ -188,14 +187,12 @@ export default function TeacherDashboard() {
   const totalAbsent   = Object.values(attendance).filter(v => v === false).length;
   const totalUnmarked = students.length - totalPresent - totalAbsent;
   const pct = students.length ? Math.round((totalPresent / students.length) * 100) : 0;
-  const pendingDrops  = dropReqs.filter(d => d.status === 'pending').length;
 
   // ── No class assigned ──
   if (!assignedClass) {
     return (
-      <div className="page-wrapper min-h-screen">
-        <Navbar />
-        <div className="max-w-4xl mx-auto px-4 py-16">
+      <div className="py-10">
+        <div>
           <EmptyState icon={School} title="No Class Assigned"
             description={profile?.role === 'admin'
               ? 'Add assignedClass to your Firestore user profile to teach a class.'
@@ -207,14 +204,12 @@ export default function TeacherDashboard() {
 
   // ── Loading ──
   if (loading) {
-    return <div className="page-wrapper min-h-screen"><Navbar /><PageLoader message="Loading class data…" /></div>;
+    return <PageLoader message="Loading class data…" />;
   }
 
   return (
-    <div className="page-wrapper min-h-screen">
-      <Navbar pendingDrops={pendingDrops} />
-
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+    <div>
+      <div className="space-y-6">
 
         {/* ── Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 animate-slide-up">

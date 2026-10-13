@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { User, Phone, CheckCircle2, AlertCircle, QrCode, Lock, History } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
-import Navbar from '../components/shared/Navbar';
 import { ClassBadge, Spinner, Modal, Alert } from '../components/shared/UIComponents';
 import { registerStudentWithHistory } from '../firebase/students';
 import { phoneExistsActive }          from '../firebase/students';
@@ -125,10 +124,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="page-wrapper min-h-screen">
-      <Navbar />
-
-      <div className="max-w-2xl mx-auto px-4 py-10">
+    <div>
+      <div className="max-w-2xl">
 
         {/* Header */}
         <div className="mb-8 animate-slide-up">
