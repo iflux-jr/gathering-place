@@ -10,6 +10,7 @@ const useAuthStore = create((set, get) => ({
   // State
   user:        null,   // Firebase Auth user
   profile:     null,   // Firestore user profile { name, role, assignedClass }
+  noAccess:    false,  // signed in, but the admin removed (or never made) their profile
   loading:     true,   // initial auth check in progress
   initialized: false,
 
@@ -26,13 +27,13 @@ const useAuthStore = create((set, get) => ({
       if (firebaseUser) {
         try {
           const profile = await getUserProfile(firebaseUser.uid);
-          set({ user: firebaseUser, profile, loading: false, initialized: true });
+          set({ user: firebaseUser, profile, noAccess: !profile, loading: false, initialized: true });
         } catch (err) {
           console.error('Failed to load user profile:', err);
-          set({ user: firebaseUser, profile: null, loading: false, initialized: true });
+          set({ user: firebaseUser, profile: null, noAccess: false, loading: false, initialized: true });
         }
       } else {
-        set({ user: null, profile: null, loading: false, initialized: true });
+        set({ user: null, profile: null, noAccess: false, loading: false, initialized: true });
       }
     });
     return unsubscribe;
