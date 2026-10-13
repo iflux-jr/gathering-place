@@ -5,10 +5,12 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import {
-  Users, Download, Search, Eye, LayoutDashboard, ClipboardList, BarChart2, GraduationCap, TrendingUp, Settings, UserMinus, CalendarDays, Archive, Lock,
+  Users, Download, Search, Eye, ClipboardList, BarChart2, GraduationCap, TrendingUp, UserMinus, CalendarDays, Lock,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Navbar from '../components/shared/Navbar';
+import { useNavigate } from 'react-router-dom';
+import { PageHeader } from '../components/layout/PageHeader';
+import { greeting } from '../lib/greeting';
 import {
   EmptyState, ClassBadge, AttendanceBadge, StatCard, SkeletonCard, SkeletonRow, Modal, PercentageRing, Alert,
 } from '../components/shared/UIComponents';
@@ -19,33 +21,45 @@ import SemesterArchivePanel    from '../components/admin/SemesterArchivePanel';
 import { subscribeToAllStudents } from '../firebase/students';
 import { subscribeToAllAttendance } from '../firebase/attendance';
 import { subscribeToUsers }          from '../firebase/users';
-import { subscribeToAllDropRequests, adminDirectDrop } from '../firebase/dropRequests';
+import { adminDirectDrop } from '../firebase/dropRequests';
 import { subscribeToAllClassConfigs } from '../firebase/classConfig';
 import { subscribeToRegistrationStatus } from '../firebase/systemSettings';
 import { exportToCSV, formatStudentsForExport, formatAttendanceForExport } from '../utils/exportUtils';
 import { CLASSES, CLASS_LABELS, CHART_COLORS } from '../utils/constants';
 import useAuthStore from '../store/authStore';
 
-const TABS = [
-  { id: 'overview',    label: 'Overview',      Icon: LayoutDashboard },
-  { id: 'students',    label: 'Students',      Icon: Users },
-  { id: 'attendance',  label: 'Attendance',    Icon: ClipboardList },
-  { id: 'analytics',  label: 'Analytics',     Icon: BarChart2 },
-  { id: 'config',     label: 'Class Setup',   Icon: Settings },
-  { id: 'drops',      label: 'Drop Requests', Icon: UserMinus },
-  { id: 'archive',    label: 'Archive',       Icon: Archive },
-  { id: 'registration',label: 'Registration', Icon: Lock },
-  { id: 'teachers',   label: 'Teachers',      Icon: GraduationCap },
-];
 
-export default function AdminDashboard() {
+// Which of the original tabs each admin section shows
+const SECTION_TABS = {
+  home:       ['overview', 'analytics'],
+  students:   ['students'],
+  attendance: ['attendance'],
+  classes:    ['config'],
+  requests:   ['drops'],
+  archive:    ['archive'],
+  settings:   ['registration', 'teachers'],
+};
+
+const SECTION_TITLES = {
+  home:       'Overview',
+  students:   'Students',
+  attendance: 'Attendance',
+  classes:    'Classes',
+  requests:   'Drop requests',
+  archive:    'Archive',
+  settings:   'Settings',
+};
+
+const firstName = name => (name || '').trim().split(/\s+/)[0] || 'there';
+
+export default function AdminDashboard({ section = 'home' }) {
   const { profile, user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState('overview');
+  const navigate = useNavigate();
+  const showTab = id => (SECTION_TABS[section] || SECTION_TABS.home).includes(id);
 
   const [students,    setStudents]    = useState([]);
   const [attendance,  setAttendance]  = useState([]);
   const [users,       setUsers]       = useState([]);
-  const [dropReqs,    setDropReqs]    = useState([]);
   const [classConfigs,setClassConfigs]= useState({});
   const [regStatus,   setRegStatus]   = useState({ isOpen: true });
   const [loading,     setLoading]     = useState(true);
@@ -62,13 +76,11 @@ export default function AdminDashboard() {
     const u1 = subscribeToAllStudents(null, d => { setStudents(d); setLoading(false); });
     const u2 = subscribeToAllAttendance(setAttendance);
     const u3 = subscribeToUsers(setUsers);
-    const u4 = subscribeToAllDropRequests(setDropReqs);
     const u5 = subscribeToAllClassConfigs(setClassConfigs);
     const u6 = subscribeToRegistrationStatus(setRegStatus);
-    return () => { u1(); u2(); u3(); u4(); u5(); u6(); };
+    return () => { u1(); u2(); u3(); u5(); u6(); };
   }, []);
 
-  const pendingDrops = dropReqs.filter(r => r.status === 'pending').length;
 
   // ── Derived stats ──
   const stats = useMemo(() => {
@@ -161,58 +173,14 @@ export default function AdminDashboard() {
   const tooltipStyle = { fontFamily:'Plus Jakarta Sans', borderRadius:'12px', border:'1px solid #E8D5C0', fontSize:12 };
 
   return (
-    <div className="page-wrapper min-h-screen">
-      <Navbar pendingDrops={pendingDrops} />
-
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-
-        {/* ── Header ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-slide-up">
-          <div>
-            <h1 className="font-display text-3xl font-bold text-brown-500">Admin Dashboard</h1>
-            <p className="font-body text-sm text-brown-300 mt-1">
-              Welcome back, {profile?.name}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-2xl border border-cream-200
-                          shadow-warm-sm text-xs font-body text-brown-400">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Live updates active
-          </div>
-        </div>
-
-        {/* ── Tabs ── */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1 animate-slide-up" style={{ animationDelay:'0.05s' }}>
-          {TABS.map(tab => {
-            const hasBadge    = tab.id === 'drops' && pendingDrops > 0;
-            const hasRegBadge = tab.id === 'registration' && !regStatus.isOpen;
-            return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-2 px-4 py-2.5 rounded-2xl font-body text-sm
-                            font-semibold whitespace-nowrap transition-all duration-200
-                            ${activeTab === tab.id
-                              ? 'text-white shadow-warm'
-                              : 'bg-white text-brown-400 hover:bg-cream-100 border border-cream-200 hover:border-cream-300'}`}
-                style={activeTab === tab.id ? { background:'linear-gradient(160deg,#5A3825,#3A2216)' } : {}}>
-                <tab.Icon size={14} />
-                {tab.label}
-                {hasBadge && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-xs
-                                   font-bold flex items-center justify-center"
-                        style={{ background:'linear-gradient(135deg,#E57A06,#C46905)', fontSize:'10px' }}>
-                    {pendingDrops}
-                  </span>
-                )}
-                {hasRegBadge && (
-                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-white" />
-                )}
-              </button>
-            );
-          })}
-        </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow={section === 'home' ? `${greeting()}, ${firstName(profile?.name)}` : 'Admin'}
+        title={SECTION_TITLES[section]}
+      />
 
         {/* ══════════════ OVERVIEW ══════════════ */}
-        {activeTab === 'overview' && (
+        {showTab('overview') && (
           <div className="space-y-6 animate-fade-in">
 
             {/* Registration closed alert */}
@@ -232,7 +200,7 @@ export default function AdminDashboard() {
                     )}
                   </div>
                 </div>
-                <button onClick={() => setActiveTab('registration')}
+                <button onClick={() => navigate('/admin/settings')}
                   className="font-body text-xs text-red-600 font-semibold underline
                              underline-offset-2 hover:text-red-800 transition-colors shrink-0">
                   Manage
@@ -294,7 +262,7 @@ export default function AdminDashboard() {
         )}
 
         {/* ══════════════ STUDENTS ══════════════ */}
-        {activeTab === 'students' && (
+        {showTab('students') && (
           <div className="space-y-4 animate-fade-in">
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
@@ -340,7 +308,7 @@ export default function AdminDashboard() {
         )}
 
         {/* ══════════════ ATTENDANCE ══════════════ */}
-        {activeTab === 'attendance' && (
+        {showTab('attendance') && (
           <div className="space-y-4 animate-fade-in">
             <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
               <select value={classFilter} onChange={e=>setClassFilter(e.target.value)} className="input-field sm:w-44">
@@ -426,7 +394,7 @@ export default function AdminDashboard() {
         )}
 
         {/* ══════════════ ANALYTICS ══════════════ */}
-        {activeTab === 'analytics' && (
+        {showTab('analytics') && (
           <div className="space-y-6 animate-fade-in">
             <div className="grid lg:grid-cols-2 gap-6">
               {/* Students per class */}
@@ -509,21 +477,21 @@ export default function AdminDashboard() {
         )}
 
         {/* ══════════════ CLASS CONFIG ══════════════ */}
-        {activeTab === 'config' && (
+        {showTab('config') && (
           <div className="animate-fade-in">
             <ClassConfigPanel />
           </div>
         )}
 
         {/* ══════════════ DROP REQUESTS ══════════════ */}
-        {activeTab === 'drops' && (
+        {showTab('drops') && (
           <div className="animate-fade-in">
             <DropRequestsPanel students={students} />
           </div>
         )}
 
         {/* ══════════════ TEACHERS ══════════════ */}
-        {activeTab === 'teachers' && (
+        {showTab('teachers') && (
           <div className="space-y-6 animate-fade-in">
             <Alert type="info"
               message="Teacher accounts are created via Firebase Authentication + a Firestore user profile document." />
@@ -580,14 +548,14 @@ export default function AdminDashboard() {
         )}
 
         {/* ══════════════ ARCHIVE ══════════════ */}
-        {activeTab === 'archive' && (
+        {showTab('archive') && (
           <div className="animate-fade-in">
             <SemesterArchivePanel />
           </div>
         )}
 
         {/* ══════════════ REGISTRATION CONTROL ══════════════ */}
-        {activeTab === 'registration' && (
+        {showTab('registration') && (
           <div className="animate-fade-in space-y-5">
             <div className="flex items-center gap-2 mb-2">
               <Lock size={18} className="text-orange-400" />
@@ -598,8 +566,6 @@ export default function AdminDashboard() {
             <RegistrationControlPanel />
           </div>
         )}
-
-      </div>
 
       {/* ── Student detail modal ── */}
       <Modal open={!!selectedStudent} onClose={()=>setSelectedStudent(null)}
