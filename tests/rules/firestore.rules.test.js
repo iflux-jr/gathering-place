@@ -247,6 +247,27 @@ describe('public registration', () => {
   });
 });
 
+describe('attendance totals', () => {
+  const sum = (over = {}) => ({ classId: 'computer', semesterWeek: 3, sessionNumber: 1, present: 4, absent: 1, total: 5, markedBy: TEACHER, ...over });
+
+  it('lets a teacher write their own class totals', async () => {
+    await assertSucceeds(setDoc(doc(as(TEACHER), 'attendanceSummary', 'computer_W3_S1'), sum()));
+  });
+
+  it('refuses another class, a mismatched ID or a wrong total', async () => {
+    await assertFails(setDoc(doc(as(TEACHER), 'attendanceSummary', 'baking_W3_S1'), sum({ classId: 'baking' })));
+    await assertFails(setDoc(doc(as(TEACHER), 'attendanceSummary', 'computer_W4_S1'), sum()));
+    await assertFails(setDoc(doc(as(TEACHER), 'attendanceSummary', 'computer_W3_S1'), sum({ total: 9 })));
+    await assertFails(setDoc(doc(as(TEACHER), 'attendanceSummary', 'computer_W3_S1'), sum({ markedBy: OTHER })));
+  });
+
+  it('is readable by admins only', async () => {
+    await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'attendanceSummary', 'computer_W3_S1'), sum()));
+    await assertSucceeds(getDoc(doc(as(ADMIN), 'attendanceSummary', 'computer_W3_S1')));
+    await assertFails(getDoc(doc(as(OTHER), 'attendanceSummary', 'computer_W3_S1')));
+  });
+});
+
 describe('class list', () => {
   const list = { classes: [{ id: 'computer', label: 'Computer', colorKey: 'sky', status: 'active', order: 0 }], activeIds: ['computer'] };
 
