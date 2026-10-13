@@ -67,10 +67,13 @@ Deployed on Netlify. Access requires a valid teacher or admin account created by
 - Protected routes enforce role requirements at the router level.
 
 ### Student Registration
-- Register students with name, phone number, gender, and up to 2 class selections from 8 available programmes.
-- Phone number uniqueness is enforced within the active semester.
-- On phone entry, the system checks the archive for previously enrolled students and pre-fills their details, enabling seamless re-registration across semesters.
-- Registration can be paused by the admin with a custom message shown to all users.
+- **Students sign themselves up** at `/join` with their name, phone number, optional gender, ward or branch and email, and one or two classes. They tick a consent box and get a reference code to check their status at `/status` (and can send it to themselves on WhatsApp).
+- **Admins review each sign-up** under **Sign-ups**: accept or decline one at a time or in bulk. A decline reason is for admins only unless the admin ticks the box to show it on the student's status page. Declined records are kept.
+- **One person per phone number.** `0803 123 4567`, `+234 803 123 4567` and `2348031234567` count as the same number. A number can't be used by two students, or by a student and a waiting sign-up.
+- **Returning students** are linked to their record from an earlier semester when they're accepted or added.
+- **Admins can still add a student directly** under **Add student**, skipping review. Teachers no longer add students; they share the sign-up link or QR code from **Invite students**, which can pick their class in advance.
+- **Pausing sign-ups** in Settings closes the public form and shows the admin's message.
+- **Spam protection:** a hidden honeypot field, strict security rules for signed-out writes, and Firebase App Check with reCAPTCHA v3 when configured.
 
 ### The 8 Vocational Classes
 Computer · Make-up · Wig Making · Barbing · Baking · Resin Art · Nail Tech · Tailoring
@@ -318,17 +321,20 @@ Access control is enforced server-side via Firestore Security Rules. The client-
 
 ### Permission Matrix
 
-| Collection | Admin | Teacher (own class) | Teacher (other class) |
-|---|---|---|---|
-| `users` | Read + Write | Read own | No access |
-| `students` | Full | Read + Create | No access |
-| `attendance` | Full | Read + Write | No access |
-| `classConfig` | Read + Write | Read + update own class's holidays | Read only |
-| `dropRequests` | Full | Create + Read | No access |
-| `systemSettings` | Read + Write | Read only | Read only |
-| `studentArchives` | Full | No access | No access |
-| `attendanceArchives` | Full | No access | No access |
-| `archiveIndex` | Full | No access | No access |
+| Collection | Admin | Teacher (own class) | Teacher (other class) | Signed out |
+|---|---|---|---|---|
+| `users` | Read + Write | Read own | No access | No access |
+| `students` | Full | Read | No access | No access |
+| `attendance` | Full | Read + Write | No access | No access |
+| `classConfig` | Read + Write | Read + update own class's holidays | Read only | No access |
+| `dropRequests` | Full | Create + Read | No access | No access |
+| `systemSettings` | Read + Write | Read only | Read only | Read `registration` and `classes` |
+| `registrations` | Read + Update | No access | No access | Create a valid pending sign-up |
+| `registrationStatus` | Read + Update | No access | No access | Read one by code; create with a sign-up |
+| `phoneIndex` | Full | No access | No access | Create with a sign-up (fails if the number is taken) |
+| `studentArchives` | Full | No access | No access | No access |
+| `attendanceArchives` | Full | No access | No access | No access |
+| `archiveIndex` | Full | No access | No access | No access |
 
 ---
 
@@ -442,7 +448,7 @@ New code is written in TypeScript; existing `.js`/`.jsx` files are converted as 
 
 ## Environment Variables
 
-Create a `.env` file in the project root. All variables are required.
+Create a `.env` file in the project root. The `VITE_FIREBASE_*` variables are required.
 
 ```env
 VITE_FIREBASE_API_KEY=
@@ -451,6 +457,11 @@ VITE_FIREBASE_PROJECT_ID=
 VITE_FIREBASE_STORAGE_BUCKET=
 VITE_FIREBASE_MESSAGING_SENDER_ID=
 VITE_FIREBASE_APP_ID=
+
+# Optional: reCAPTCHA v3 site key, turns on Firebase App Check (see "Spam protection")
+VITE_RECAPTCHA_SITE_KEY=
+# Local development only: use the emulators started by `npm run emulators`
+VITE_USE_EMULATORS=
 ```
 
 These values are found in Firebase Console → Project Settings → Your apps → Web app config.
@@ -515,6 +526,26 @@ assignedClass: "<class-id>"
 ### 8. Configure Classes
 
 Log in as admin → Admin Dashboard → **Class Setup** tab → Configure each class with semester dates and sessions per week.
+
+### 9. Index existing students' phone numbers (once, when upgrading to self-registration)
+
+The public sign-up form relies on a `phoneIndex` collection to refuse numbers that already belong to a student. Students created before self-registration need an entry. The script only adds fields and documents, never deletes, and changes nothing unless you pass `--apply`.
+
+1. In Firebase Console → Project settings → Service accounts, generate a private key and save it outside the repository.
+2. Dry run, which prints what it would write and any numbers it can't read or that two students share:
+   ```bash
+   GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json node scripts/migrate-registrations.mjs --project <your-project-id>
+   ```
+3. Fix any listed problems in the app, then run it again with `--apply`. Running it twice is safe.
+
+Until this has run, accepting a sign-up still checks existing students by phone, so duplicates are caught at review rather than at sign-up.
+
+### 10. Spam protection (optional, recommended)
+
+1. Create a reCAPTCHA v3 key for your domain at <https://www.google.com/recaptcha/admin>.
+2. In Firebase Console → App Check, register the web app with that key's secret.
+3. Set `VITE_RECAPTCHA_SITE_KEY` (locally and as a GitHub secret) and deploy.
+4. Watch App Check → Firestore metrics for a few days. Once almost all requests are verified, click **Enforce**.
 
 ---
 

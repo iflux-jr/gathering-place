@@ -2,6 +2,7 @@
 // Firebase initialization — reads credentials from environment variables
 
 import { initializeApp } from 'firebase/app';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 
@@ -16,6 +17,14 @@ const firebaseConfig = {
 
 // Initialize Firebase app
 const app = initializeApp(firebaseConfig);
+
+// App Check proves requests come from this site, which keeps bots off the public sign-up form.
+// Turned on when a reCAPTCHA v3 site key is configured; enforcement is switched on in the
+// Firebase console once the dashboard shows real traffic passing (see README).
+const recaptchaKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+if (recaptchaKey && import.meta.env.VITE_USE_EMULATORS !== 'true') {
+  initializeAppCheck(app, { provider: new ReCaptchaV3Provider(recaptchaKey), isTokenAutoRefreshEnabled: true });
+}
 
 // Export auth and firestore instances
 export const auth = getAuth(app);

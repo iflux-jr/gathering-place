@@ -15,7 +15,11 @@ import { homePathFor } from './lib/homePath';
 // Pages load on demand, so a teacher on a phone never downloads the admin screens
 const LoginPage          = lazy(() => import('./pages/LoginPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
-const RegisterPage       = lazy(() => import('./pages/RegisterPage'));
+const AddStudentPage     = lazy(() => import('./pages/AddStudentPage'));
+const InvitePage         = lazy(() => import('./pages/InvitePage'));
+const RegistrationsPage  = lazy(() => import('./pages/RegistrationsPage'));
+const JoinPage           = lazy(() => import('./pages/JoinPage'));
+const StatusPage         = lazy(() => import('./pages/StatusPage'));
 const TeacherDashboard   = lazy(() => import('./pages/TeacherDashboard'));
 const AdminDashboard     = lazy(() => import('./pages/AdminDashboard'));
 const NotFoundPage       = lazy(() => import('./pages/NotFoundPage'));
@@ -41,15 +45,20 @@ export default function App() {
         <Route path="/login"           element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/styleguide"      element={<StyleGuidePage />} />
+        <Route path="/join"            element={<JoinPage />} />
+        <Route path="/status"          element={<StatusPage />} />
+        <Route path="/status/:code"    element={<StatusPage />} />
 
         {/* Signed in: everything inside the app frame */}
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/teacher"  element={<TeacherDashboard />} />
+            <Route path="/teacher" element={<TeacherDashboard />} />
+            <Route path="/invite"  element={<InvitePage />} />
 
             <Route element={<AdminRoute />}>
+              <Route path="/register" element={<AddStudentPage />} />
               <Route path="/admin" element={<AdminDashboard section="home" />} />
+              <Route path="/admin/registrations" element={<RegistrationsPage />} />
               {ADMIN_SECTIONS.map(s => (
                 <Route key={s} path={`/admin/${s}`} element={<AdminDashboard section={s} />} />
               ))}

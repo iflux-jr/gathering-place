@@ -26,11 +26,11 @@ export async function getRegistrationStatus() {
 /**
  * Real-time listener for registration status
  */
-export function subscribeToRegistrationStatus(callback) {
+export function subscribeToRegistrationStatus(callback, onError) {
   return onSnapshot(doc(db, SETTINGS_COL, REG_DOC), snap => {
     if (!snap.exists()) callback({ isOpen: true, message: '' });
     else callback(snap.data());
-  });
+  }, onError);
 }
 
 /**

@@ -10,8 +10,9 @@ import { cn } from '../../lib/cn';
 import useAuthStore from '../../store/authStore';
 import { logoutUser } from '../../firebase/users';
 import { subscribeToPendingDropRequests } from '../../firebase/dropRequests';
+import { subscribeToPendingRegistrationCount } from '../../firebase/registrations';
 import { CLASS_LABELS } from '../../utils/constants';
-import { ADMIN_NAV, ADMIN_PRIMARY, REGISTER_ITEM, TEACHER_NAV, type NavItem } from './navigation';
+import { ADMIN_NAV, ADMIN_PRIMARY, INVITE_ITEM, REGISTER_ITEM, TEACHER_NAV, type NavItem } from './navigation';
 
 type Badges = Partial<Record<NonNullable<NavItem['badge']>, number>>;
 
@@ -26,18 +27,23 @@ function useNavItems() {
   if (teaches || !isAdmin) {
     items.push(...TEACHER_NAV.map(i => (isAdmin && teaches ? { ...i, label: `${classLabel} class` } : i)));
   }
-  items.push(REGISTER_ITEM);
+  // Admins add students directly; teachers share the sign-up link instead
+  items.push(isAdmin ? REGISTER_ITEM : INVITE_ITEM);
+  if (isAdmin && teaches) items.push(INVITE_ITEM);
   return { items, isAdmin, teaches };
 }
 
 function useBadges(isAdmin: boolean): Badges {
   const [pendingDrops, setPendingDrops] = useState(0);
+  const [pendingRegistrations, setPendingRegistrations] = useState(0);
   useEffect(() => {
     if (!isAdmin) return;
-    // Listens to pending requests only, so reads stay proportional to what is waiting
-    return subscribeToPendingDropRequests((reqs: unknown[]) => setPendingDrops(reqs.length));
+    // Listen to pending items only, so reads stay proportional to what is waiting
+    const offDrops = subscribeToPendingDropRequests((reqs: unknown[]) => setPendingDrops(reqs.length));
+    const offRegs = subscribeToPendingRegistrationCount(setPendingRegistrations);
+    return () => { offDrops(); offRegs(); };
   }, [isAdmin]);
-  return { pendingDrops };
+  return { pendingDrops, pendingRegistrations };
 }
 
 function BadgeCount({ count, className }: { count?: number; className?: string }) {
@@ -79,7 +85,7 @@ function RoleLine() {
 function Sidebar({ items, badges }: { items: NavItem[]; badges: Badges }) {
   const signOut = useSignOut();
   return (
-    <aside className="sticky top-0 hidden h-dvh w-64 flex-none flex-col gap-6 bg-ink px-4 py-6 text-white lg:flex">
+    <aside className="sticky top-0 hidden h-dvh w-64 flex-none flex-col gap-6 bg-ink px-4 py-6 text-white lg:flex print:hidden">
       <NavLink to="/" className="rounded-md px-2 focus-visible:outline-none focus-visible:shadow-focus" aria-label="The Gathering Place, home">
         <Logo on="dark" height={30} />
       </NavLink>
@@ -119,7 +125,7 @@ function Sidebar({ items, badges }: { items: NavItem[]; badges: Badges }) {
 
 function TopBar() {
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 rounded-b-frame bg-ink px-4 pb-3 pt-[calc(env(safe-area-inset-top)+12px)] text-white lg:hidden">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 rounded-b-frame bg-ink px-4 pb-3 pt-[calc(env(safe-area-inset-top)+12px)] text-white lg:hidden print:hidden">
       <NavLink to="/" aria-label="The Gathering Place, home" className="rounded-md focus-visible:outline-none focus-visible:shadow-focus">
         <Logo on="dark" height={28} />
       </NavLink>
@@ -148,7 +154,7 @@ function BottomBar({ items, badges }: { items: NavItem[]; badges: Badges }) {
 
   return (
     <>
-      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 rounded-t-frame bg-ink px-2 pb-[calc(env(safe-area-inset-bottom)+6px)] pt-1.5 lg:hidden">
+      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 rounded-t-frame bg-ink px-2 pb-[calc(env(safe-area-inset-bottom)+6px)] pt-1.5 lg:hidden print:hidden">
         <ul className="flex">
           {primary.map(item => (
             <li key={item.to} className="flex flex-1">

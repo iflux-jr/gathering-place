@@ -28,6 +28,12 @@ export interface Student {
   reRegistered?: boolean;
   previousArchive?: string;
   previousSemester?: string;
+  /** Digits-only international number; see src/lib/phone.ts. Missing on records made before self-registration */
+  phoneKey?: string;
+  ward?: string;
+  email?: string;
+  /** Reference code of the self-registration this student came from */
+  registrationId?: string;
   droppedFrom?: Record<string, { droppedAt: string; droppedBy: string; requestId: string | null } | null>;
 }
 
@@ -87,3 +93,40 @@ export interface DropRequest {
   rejectionReason: string | null;
   requestedAt: DateLike;
 }
+
+export type RegistrationState = 'pending' | 'accepted' | 'declined';
+
+/** registrations/{refCode}: a self-registration, private to admins */
+export interface Registration {
+  id: string;
+  name: string;
+  phone: string;
+  phoneKey: string;
+  gender?: string | null;
+  classes: string[];
+  ward?: string;
+  email?: string;
+  consent: true;
+  status: RegistrationState;
+  createdAt: DateLike;
+  reviewedBy?: string;
+  reviewedAt?: DateLike;
+  studentId?: string;
+  declineReason?: string;
+  /** Whether the decline reason is shown on the public status page */
+  shareReason?: boolean;
+}
+
+/** registrationStatus/{refCode}: what the student sees on the status page */
+export interface RegistrationStatusDoc {
+  status: RegistrationState;
+  classes: string[];
+  createdAt: DateLike;
+  reviewedAt?: DateLike;
+  note?: string;
+}
+
+/** phoneIndex/{phoneKey}: who holds a phone number, a pending registration or an active student */
+export type PhoneIndexEntry =
+  | { kind: 'pending'; registrationId: string; createdAt?: DateLike }
+  | { kind: 'student'; studentId: string; updatedAt?: DateLike };

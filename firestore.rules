@@ -32,11 +32,11 @@ service cloud.firestore {
     }
 
     // ── Active Students ──
+    // Students join through the public form and an admin's review, or an admin adds them
+    // directly. Teachers read their own class only.
     match /students/{studentId} {
       allow read, write: if isAdmin();
       allow read:        if isTeacher() && resource.data.classes.hasAny([userClass()]);
-      allow create:      if isTeacher() && request.resource.data.classes.hasAny([userClass()]);
-      allow update:      if isAdmin();
     }
 
     // ── Attendance ──
@@ -74,12 +74,88 @@ service cloud.firestore {
     }
 
     // ── System Settings ──
-    // Registration status must be readable by ALL signed-in users
-    // (teachers and admins both need it on RegisterPage load).
-    // Use signedIn() directly — no profile() lookup, no failure risk.
     match /systemSettings/{docId} {
       allow read:  if signedIn();
+      // The public sign-up form needs to know whether sign-ups are open and which classes exist
+      allow get:   if docId in ['registration', 'classes'];
       allow write: if isAdmin();
+    }
+
+    // ── Public self-registration ──
+    // Signed-out visitors may only create a pending registration, as one batch of three
+    // documents that vouch for each other: the registration, its public status (readable
+    // by anyone holding the reference code), and the phone-number claim that keeps one
+    // registration or student per number. Nothing else is readable or writable to them.
+
+    function registrationOpen() {
+      let p = /databases/$(database)/documents/systemSettings/registration;
+      return !exists(p) || get(p).data.get('isOpen', true) == true;
+    }
+
+    // Until an admin manages classes in the app, the original eight are the active set
+    function activeClassIds() {
+      let p = /databases/$(database)/documents/systemSettings/classes;
+      return exists(p)
+        ? get(p).data.activeIds
+        : ['computer', 'make-up', 'wig-making', 'barbing', 'baking', 'resin-art', 'nail-tech', 'tailoring'];
+    }
+
+    function optionalText(d, field, max) {
+      return !(field in d) || (d[field] is string && d[field].size() <= max);
+    }
+
+    function validRegistration(d, refId) {
+      return refId.matches('^[A-HJKMNP-Z2-9]{8}$')
+        && d.keys().hasAll(['name', 'phone', 'phoneKey', 'classes', 'consent', 'status', 'createdAt'])
+        && d.keys().hasOnly(['name', 'phone', 'phoneKey', 'gender', 'classes', 'ward', 'email',
+                             'consent', 'status', 'createdAt'])
+        && d.name is string && d.name.trim().size() >= 2 && d.name.size() <= 80
+        && d.phone is string && d.phone.size() >= 7 && d.phone.size() <= 24
+        && d.phoneKey is string && d.phoneKey.matches('^[1-9][0-9]{9,14}$')
+        && (!('gender' in d) || d.gender == null || d.gender in ['Male', 'Female', 'Prefer not to say'])
+        && d.classes is list && d.classes.size() >= 1 && d.classes.size() <= 2
+        && d.classes.toSet().size() == d.classes.size()
+        && d.classes.toSet().hasOnly(activeClassIds())
+        && optionalText(d, 'ward', 80)
+        && optionalText(d, 'email', 120)
+        && (!('email' in d) || d.email == '' || d.email.matches('^[^@ ]+@[^@ ]+[.][^@ ]+$'))
+        && d.consent == true
+        && d.status == 'pending'
+        && d.createdAt == request.time;
+    }
+
+    match /registrations/{refId} {
+      allow read, update: if isAdmin();
+      allow create: if registrationOpen()
+                    && validRegistration(request.resource.data, refId)
+                    && getAfter(/databases/$(database)/documents/registrationStatus/$(refId)).data.status == 'pending'
+                    && getAfter(/databases/$(database)/documents/phoneIndex/$(request.resource.data.phoneKey))
+                         .data.registrationId == refId;
+    }
+
+    match /registrationStatus/{refId} {
+      // get only: knowing the code is what lets someone see it; nobody can list them
+      allow get: if true;
+      allow list, update: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly(['status', 'classes', 'createdAt'])
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.createdAt == request.time
+                    && !exists(/databases/$(database)/documents/registrations/$(refId))
+                    && getAfter(/databases/$(database)/documents/registrations/$(refId)).data.classes
+                         == request.resource.data.classes;
+    }
+
+    match /phoneIndex/{key} {
+      allow read, write: if isAdmin();
+      // create fails when the number is already claimed, which is the uniqueness check
+      allow create: if request.resource.data.keys().hasOnly(['kind', 'registrationId', 'createdAt'])
+                    && request.resource.data.kind == 'pending'
+                    && request.resource.data.createdAt == request.time
+                    && request.resource.data.registrationId is string
+                    // the registration must be new in this same batch, not an older one
+                    && !exists(/databases/$(database)/documents/registrations/$(request.resource.data.registrationId))
+                    && getAfter(/databases/$(database)/documents/registrations/$(request.resource.data.registrationId))
+                         .data.phoneKey == key;
     }
 
     // ── Student Archives — admin only ──

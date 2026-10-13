@@ -5,8 +5,10 @@ import {
   collection, getDocs, getDoc, doc, setDoc, writeBatch, query, where,
 } from 'firebase/firestore';
 import { db } from './config';
+import { phoneKey } from '../lib/phone';
 
-const BATCH_SIZE = 400; // stay safely under Firestore's 500-op limit
+// Up to two writes per item (a student and their phone index entry), under Firestore's 500-write batch limit
+const BATCH_SIZE = 200;
 
 /**
  * Build the archive key for a class + semester
@@ -93,8 +95,11 @@ export async function archiveClassSemester(
     const remaining = (student.classes || []).filter(c => c !== classId);
     const studentRef = doc(db, 'students', student.id);
     if (remaining.length === 0) {
-      // Student has no other classes — remove from active collection
+      // Student has no other classes — remove from active collection and free their number,
+      // so they can register again next semester
       batch.delete(studentRef);
+      const key = student.phoneKey || phoneKey(student.phone);
+      if (key) batch.delete(doc(db, 'phoneIndex', key));
     } else {
       batch.update(studentRef, { classes: remaining });
     }
@@ -155,22 +160,6 @@ export async function getArchivedAttendance(archiveKey, classFilter = null) {
   let records = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   if (classFilter) records = records.filter(r => r.className === classFilter);
   return records;
-}
-
-/**
- * Check if a phone number exists in any archive (for re-registration flow)
- * Returns { found: bool, archiveKey, semesterLabel, student }
- */
-export async function findArchivedStudentByPhone(phone) {
-  const indexes = await getArchiveIndex();
-  for (const idx of indexes) {
-    const students = await getArchivedStudents(idx.id);
-    const match = students.find(s => s.phone === phone);
-    if (match) {
-      return { found: true, archiveKey: idx.id, semesterLabel: idx.semesterLabel, student: match };
-    }
-  }
-  return { found: false };
 }
 
 // ── Internal helper: run a callback in batches of BATCH_SIZE ───────────

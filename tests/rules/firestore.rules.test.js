@@ -4,7 +4,9 @@ import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 import {
   assertFails, assertSucceeds, initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import {
+  doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, writeBatch, serverTimestamp, deleteDoc,
+} from 'firebase/firestore';
 
 let env;
 
@@ -110,5 +112,137 @@ describe('attendance', () => {
 
   it('refuses marking on behalf of someone else', async () => {
     await assertFails(setDoc(doc(as(TEACHER), 'attendance', 'stu-1_computer_W3_S1'), record(OTHER)));
+  });
+});
+
+describe('students', () => {
+  it('refuses a teacher adding a student, now that students register themselves', async () => {
+    await assertFails(setDoc(doc(as(TEACHER), 'students', 'stu-new'), { name: 'New', phone: '08011111111', classes: ['computer'] }));
+  });
+
+  it('lets an admin add a student directly', async () => {
+    await assertSucceeds(setDoc(doc(as(ADMIN), 'students', 'stu-new'), { name: 'New', phone: '08011111111', classes: ['computer'] }));
+  });
+});
+
+// The public sign-up form writes these three documents in one batch
+function joinBatch(db, ref = 'ABCD2345', overrides = {}, opts = {}) {
+  const reg = {
+    name: 'Ngozi Eze', phone: '0803 123 4567', phoneKey: '2348031234567', gender: 'Female',
+    classes: ['computer', 'baking'], ward: 'Ikeja Ward', email: '', consent: true,
+    status: 'pending', createdAt: serverTimestamp(), ...overrides,
+  };
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'registrations', ref), reg);
+  if (!opts.skipStatus) {
+    batch.set(doc(db, 'registrationStatus', ref), { status: 'pending', classes: reg.classes, createdAt: serverTimestamp() });
+  }
+  if (!opts.skipPhone) {
+    batch.set(doc(db, 'phoneIndex', opts.phoneKey ?? reg.phoneKey), { kind: 'pending', registrationId: ref, createdAt: serverTimestamp() });
+  }
+  return batch.commit();
+}
+
+describe('public registration', () => {
+  it('lets a signed-out visitor submit a complete registration', async () => {
+    await assertSucceeds(joinBatch(anon()));
+  });
+
+  it('lets them read their status with the code, but not list statuses', async () => {
+    await joinBatch(anon());
+    await assertSucceeds(getDoc(doc(anon(), 'registrationStatus', 'ABCD2345')));
+    await assertFails(getDocs(collection(anon(), 'registrationStatus')));
+  });
+
+  it('keeps registrations and the phone index private', async () => {
+    await joinBatch(anon());
+    await assertFails(getDoc(doc(anon(), 'registrations', 'ABCD2345')));
+    await assertFails(getDoc(doc(anon(), 'phoneIndex', '2348031234567')));
+    await assertFails(getDoc(doc(as(TEACHER), 'registrations', 'ABCD2345')));
+  });
+
+  it('refuses a second registration with the same number', async () => {
+    await joinBatch(anon());
+    await assertFails(joinBatch(anon(), 'WXYZ6789'));
+  });
+
+  it('refuses a number that already belongs to a student', async () => {
+    await env.withSecurityRulesDisabled(ctx =>
+      setDoc(doc(ctx.firestore(), 'phoneIndex', '2348031234567'), { kind: 'student', studentId: 'stu-1' }));
+    await assertFails(joinBatch(anon()));
+  });
+
+  it('refuses a registration without its status or phone claim', async () => {
+    await assertFails(joinBatch(anon(), 'ABCD2345', {}, { skipStatus: true }));
+    await assertFails(joinBatch(anon(), 'ABCD2345', {}, { skipPhone: true }));
+  });
+
+  it('refuses a phone claim under a different number', async () => {
+    await assertFails(joinBatch(anon(), 'ABCD2345', {}, { phoneKey: '2348099999999' }));
+  });
+
+  it('refuses re-claiming a number with an older registration', async () => {
+    await joinBatch(anon());
+    // an admin declined it and freed the number
+    await env.withSecurityRulesDisabled(ctx => deleteDoc(doc(ctx.firestore(), 'phoneIndex', '2348031234567')));
+    await assertFails(setDoc(doc(anon(), 'phoneIndex', '2348031234567'),
+      { kind: 'pending', registrationId: 'ABCD2345', createdAt: serverTimestamp() }));
+  });
+
+  it.each([
+    ['no consent', { consent: false }],
+    ['three classes', { classes: ['computer', 'baking', 'barbing'] }],
+    ['no classes', { classes: [] }],
+    ['the same class twice', { classes: ['computer', 'computer'] }],
+    ['an unknown class', { classes: ['juggling'] }],
+    ['an already accepted status', { status: 'accepted' }],
+    ['a made-up gender', { gender: 'Robot' }],
+    ['a bad email', { email: 'not-an-email' }],
+    ['an extra field', { studentId: 'stu-1' }],
+    ['a one-letter name', { name: 'A' }],
+    ['a client-chosen time', { createdAt: new Date('2020-01-01') }],
+  ])('refuses %s', async (_label, overrides) => {
+    await assertFails(joinBatch(anon(), 'ABCD2345', overrides));
+  });
+
+  it('refuses a malformed reference code', async () => {
+    await assertFails(joinBatch(anon(), 'abcd-1234'));
+  });
+
+  it('accepts an optional email when it looks right', async () => {
+    await assertSucceeds(joinBatch(anon(), 'ABCD2345', { email: 'ngozi@example.com' }));
+  });
+
+  it('follows the active class list once an admin manages classes', async () => {
+    await env.withSecurityRulesDisabled(ctx =>
+      setDoc(doc(ctx.firestore(), 'systemSettings', 'classes'), { activeIds: ['computer', 'pottery'] }));
+    await assertFails(joinBatch(anon(), 'ABCD2345', { classes: ['baking'] }));
+    await assertSucceeds(joinBatch(anon(), 'WXYZ6789', { classes: ['pottery'], phoneKey: '2348022222222' }));
+  });
+
+  it('refuses everything while sign-ups are paused', async () => {
+    await env.withSecurityRulesDisabled(ctx =>
+      setDoc(doc(ctx.firestore(), 'systemSettings', 'registration'), { isOpen: false, message: 'Back in January' }));
+    await assertSucceeds(getDoc(doc(anon(), 'systemSettings', 'registration')));
+    await assertFails(joinBatch(anon()));
+  });
+
+  it('keeps other settings private to signed-in staff', async () => {
+    await env.withSecurityRulesDisabled(ctx =>
+      setDoc(doc(ctx.firestore(), 'systemSettings', 'activeSemester'), { label: 'x' }));
+    await assertFails(getDoc(doc(anon(), 'systemSettings', 'activeSemester')));
+  });
+
+  it('refuses signed-out edits after submitting', async () => {
+    await joinBatch(anon());
+    await assertFails(updateDoc(doc(anon(), 'registrations', 'ABCD2345'), { name: 'Changed' }));
+    await assertFails(updateDoc(doc(anon(), 'registrationStatus', 'ABCD2345'), { status: 'accepted' }));
+  });
+
+  it('lets an admin review the queue', async () => {
+    await joinBatch(anon());
+    await assertSucceeds(getDocs(query(collection(as(ADMIN), 'registrations'), where('status', '==', 'pending'))));
+    await assertSucceeds(updateDoc(doc(as(ADMIN), 'registrations', 'ABCD2345'), { status: 'accepted' }));
+    await assertSucceeds(updateDoc(doc(as(ADMIN), 'registrationStatus', 'ABCD2345'), { status: 'accepted' }));
   });
 });
