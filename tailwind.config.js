@@ -1,9 +1,20 @@
+import { colors, classPalette, fonts, fontSize, radius, shadow } from './src/theme/tokens.js';
+
+// Class palette as utilities: bg-class-sky, text-class-sky-strong, …
+const classColors = Object.fromEntries(
+  Object.entries(classPalette).map(([key, v]) => [key, { DEFAULT: v.surface, strong: v.strong }])
+);
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
+        // ── New design system (src/theme/tokens.js) ──
+        ...colors,
+        class: classColors,
+        // ── Legacy palette, used by screens not yet redesigned ──
         brown: {
           50:  '#F7F0EB',
           100: '#EDD9CC',
@@ -38,11 +49,18 @@ export default {
         },
       },
       fontFamily: {
+        // Legacy serif display face, used by screens not yet redesigned
         display: ['Fraunces', 'Georgia', 'serif'],
-        body:    ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-        mono:    ['JetBrains Mono', 'monospace'],
+        heading: fonts.display,
+        body:    fonts.body,
+        mono:    fonts.mono,
       },
+      fontSize,
       boxShadow: {
+        sm:    shadow.sm,
+        md:    shadow.md,
+        lg:    shadow.lg,
+        focus: shadow.focus,
         'warm-sm': '0 1px 3px rgba(90,56,37,0.12)',
         'warm':    '0 4px 16px rgba(90,56,37,0.15)',
         'warm-lg': '0 8px 32px rgba(90,56,37,0.20)',
@@ -57,6 +75,9 @@ export default {
         'orange-gradient': 'linear-gradient(135deg, #E57A06 0%, #C46905 100%)',
         'card-gradient': 'linear-gradient(160deg, #ffffff 0%, #FDFAF7 100%)',
       },
+      borderWidth: { 1.5: '1.5px' },
+      minHeight: { touch: '44px' },
+      minWidth:  { touch: '44px' },
       animation: {
         'fade-in':     'fadeIn 0.4s ease-out',
         'slide-up':    'slideUp 0.5s cubic-bezier(0.16,1,0.3,1)',
@@ -78,6 +99,9 @@ export default {
         bounceSm:   { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-4px)' } },
       },
       borderRadius: {
+        xs:    radius.xs,
+        card:  radius.lg,
+        frame: radius.xl,
         '2xl': '1rem',
         '3xl': '1.25rem',
         '4xl': '1.75rem',
