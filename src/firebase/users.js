@@ -2,16 +2,10 @@
 // User management (Firestore profiles linked to Firebase Auth)
 
 import {
-  collection, doc, setDoc, getDoc, getDocs,
-  updateDoc, deleteDoc, query, where, onSnapshot,
-  serverTimestamp,
+  collection, doc, getDoc, getDocs, updateDoc, deleteDoc, onSnapshot,
 } from 'firebase/firestore';
 import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  updatePassword,
-  sendPasswordResetEmail,
+  signInWithEmailAndPassword, signOut, sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth, db } from './config';
 
@@ -30,25 +24,6 @@ export async function loginUser(email, password) {
  */
 export async function logoutUser() {
   await signOut(auth);
-}
-
-/**
- * Create a new teacher/admin account (admin only)
- */
-export async function createUserAccount({ email, password, name, role, assignedClass }) {
-  const credential = await createUserWithEmailAndPassword(auth, email, password);
-  const { uid } = credential.user;
-
-  await setDoc(doc(db, USERS_COLLECTION, uid), {
-    id:            uid,
-    name,
-    email,
-    role,          // 'admin' | 'teacher'
-    assignedClass: assignedClass || null,
-    createdAt:     serverTimestamp(),
-  });
-
-  return uid;
 }
 
 /**

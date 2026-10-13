@@ -42,7 +42,7 @@ export default function RegisterPage() {
     const e = {};
     if (!form.name.trim())    e.name  = 'Full name is required.';
     if (!form.phone.trim())   e.phone = 'Phone number is required.';
-    else if (!/^\+?[\d\s\-]{7,15}$/.test(form.phone.trim())) e.phone = 'Enter a valid phone number.';
+    else if (!/^\+?[\d\s-]{7,15}$/.test(form.phone.trim())) e.phone = 'Enter a valid phone number.';
     if (form.classes.length === 0)                     e.classes = 'Select at least one class.';
     if (form.classes.length > MAX_CLASSES_PER_STUDENT) e.classes = `Maximum ${MAX_CLASSES_PER_STUDENT} classes.`;
     return e;
@@ -60,7 +60,7 @@ export default function RegisterPage() {
   // ── Phone field blur — check active + archive ──
   async function handlePhoneBlur() {
     const phone = form.phone.trim();
-    if (!phone || !/^\+?[\d\s\-]{7,15}$/.test(phone)) return;
+    if (!phone || !/^\+?[\d\s-]{7,15}$/.test(phone)) return;
     setCheckingPhone(true);
     setArchivedMatch(null);
     try {

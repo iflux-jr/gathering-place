@@ -5,29 +5,23 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import {
-  Users, Download, Search, Eye, LayoutDashboard,
-  ClipboardList, BarChart2, GraduationCap, TrendingUp,
-  Check, X, Settings, UserMinus, CalendarDays,
-  Archive, Lock,
+  Users, Download, Search, Eye, LayoutDashboard, ClipboardList, BarChart2, GraduationCap, TrendingUp, Settings, UserMinus, CalendarDays, Archive, Lock,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '../components/shared/Navbar';
 import {
-  PageLoader, EmptyState, ClassBadge, AttendanceBadge,
-  StatCard, SkeletonCard, SkeletonRow, Modal,
-  PercentageRing, Alert, DropRequestBadge,
+  EmptyState, ClassBadge, AttendanceBadge, StatCard, SkeletonCard, SkeletonRow, Modal, PercentageRing, Alert,
 } from '../components/shared/UIComponents';
 import ClassConfigPanel        from '../components/admin/ClassConfigPanel';
 import DropRequestsPanel       from '../components/admin/DropRequestsPanel';
 import RegistrationControlPanel from '../components/admin/RegistrationControlPanel';
 import SemesterArchivePanel    from '../components/admin/SemesterArchivePanel';
-import { subscribeToAllStudents, updateStudent } from '../firebase/students';
-import { subscribeToAllAttendance, calcAttendancePercentage } from '../firebase/attendance';
+import { subscribeToAllStudents } from '../firebase/students';
+import { subscribeToAllAttendance } from '../firebase/attendance';
 import { subscribeToUsers }          from '../firebase/users';
 import { subscribeToAllDropRequests, adminDirectDrop } from '../firebase/dropRequests';
 import { subscribeToAllClassConfigs } from '../firebase/classConfig';
 import { subscribeToRegistrationStatus } from '../firebase/systemSettings';
-import { formatDateShort } from '../utils/dateUtils';
 import { exportToCSV, formatStudentsForExport, formatAttendanceForExport } from '../utils/exportUtils';
 import { CLASSES, CLASS_LABELS, CHART_COLORS } from '../utils/constants';
 import useAuthStore from '../store/authStore';
@@ -83,9 +77,11 @@ export default function AdminDashboard() {
     const totalCountable  = attendance.filter(r => r.present !== null  && !r.isHoliday).length;
     const overallRate     = totalCountable ? Math.round((totalPresent / totalCountable) * 100) : 0;
     const teachers        = users.filter(u => u.role === 'teacher').length;
-    const holidaySessions = attendance.filter(r => r.isHoliday).length;
+    // Holidays are stored per class in classConfig, not as attendance rows
+    const holidaySessions = Object.values(classConfigs)
+      .reduce((sum, cfg) => sum + (cfg.holidays?.length || 0), 0);
     return { totalStudents, overallRate, teachers, holidaySessions };
-  }, [students, attendance, users]);
+  }, [students, attendance, users, classConfigs]);
 
   // ── Filtered students ──
   const filteredStudents = useMemo(() => students.filter(s => {
@@ -134,7 +130,8 @@ export default function AdminDashboard() {
     toast.success('Students exported');
   }
   function exportAttendance() {
-    exportToCSV(formatAttendanceForExport(filteredAttendance), `attendance_${Date.now()}.csv`);
+    const userNames = Object.fromEntries(users.map(u => [u.id, u.name]));
+    exportToCSV(formatAttendanceForExport(filteredAttendance, userNames), `attendance_${Date.now()}.csv`);
     toast.success('Attendance exported');
   }
 
@@ -332,7 +329,6 @@ export default function AdminDashboard() {
                   </div>
                   {filteredStudents.map((student, idx) => (
                     <AdminStudentRow key={student.id} student={student}
-                      attendance={attendance.filter(r=>r.studentId===student.id)}
                       onView={()=>setSelectedStudent(student)}
                       onDirectDrop={(className)=>setDirectDropModal({ studentId:student.id, studentName:student.name, className, classes:student.classes })}
                       index={idx} />
@@ -559,7 +555,7 @@ export default function AdminDashboard() {
               <div>
                 <h3 className="section-title mb-3">Administrators</h3>
                 <div className="card p-0 overflow-hidden">
-                  {users.filter(u=>u.role==='admin').map((u,idx)=>(
+                  {users.filter(u=>u.role==='admin').map(u=>(
                     <div key={u.id} className="flex items-center gap-4 px-5 py-4 border-b border-cream-50 last:border-0">
                       <div className="w-9 h-9 rounded-xl flex items-center justify-center
                                       font-bold font-body text-sm text-white shrink-0"
@@ -638,7 +634,7 @@ export default function AdminDashboard() {
 
 // ── Admin student row ──
 // Mobile: card layout (stacked). Desktop (sm+): single row grid.
-function AdminStudentRow({ student, attendance, onView, onDirectDrop, index }) {
+function AdminStudentRow({ student, onView, onDirectDrop, index }) {
   return (
     <div className="border-b border-cream-50 hover:bg-cream-50/50
                     transition-colors duration-150 animate-fade-in"

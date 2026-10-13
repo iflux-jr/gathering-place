@@ -2,8 +2,7 @@
 // Per-class semester archiving: copy students + attendance → archives, then clear active
 
 import {
-  collection, getDocs, doc, setDoc, deleteDoc,
-  writeBatch, query, where, serverTimestamp, getDoc,
+  collection, getDocs, getDoc, doc, setDoc, writeBatch, query, where,
 } from 'firebase/firestore';
 import { db } from './config';
 
@@ -44,6 +43,15 @@ export async function archiveClassSemester(
   const archivedAt = new Date().toISOString();
   const meta = { semesterLabel, semesterNumber, classId, archivedAt, archivedBy: adminUid };
 
+  // Refuse to overwrite a finished archive that used the same class + label.
+  // An 'in_progress' archive is a run that failed midway, so it may be resumed.
+  const existing = await getDoc(doc(db, 'archiveIndex', archiveKey));
+  if (existing.exists() && existing.data().status !== 'in_progress') {
+    throw new Error(
+      `An archive named "${semesterLabel}" already exists for this class. Change the semester label and try again.`
+    );
+  }
+
   // ── 1. Fetch active students in this class ──────────────────────────
   onProgress('Fetching students…');
   const studentsSnap = await getDocs(
@@ -76,6 +84,7 @@ export async function archiveClassSemester(
     ...meta,
     studentCount:    students.length,
     attendanceCount: attRecords.length,
+    status:          'in_progress',
   });
 
   // ── 5. Remove classId from student.classes[] (or delete if no classes left) ──
@@ -112,6 +121,8 @@ export async function archiveClassSemester(
     });
   });
 
+  await setDoc(doc(db, 'archiveIndex', archiveKey), { status: 'complete' }, { merge: true });
+
   onProgress('Done!');
   return { archiveKey, studentCount: students.length, attendanceCount: attRecords.length };
 }
@@ -130,8 +141,7 @@ export async function getArchiveIndex() {
  * Fetch archived students for a specific archive key
  */
 export async function getArchivedStudents(archiveKey, classFilter = null) {
-  let q = collection(db, 'studentArchives', archiveKey, 'students');
-  const snap = await getDocs(q);
+  const snap = await getDocs(collection(db, 'studentArchives', archiveKey, 'students'));
   let students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   if (classFilter) students = students.filter(s => (s.classes||[]).includes(classFilter));
   return students.sort((a,b) => a.name.localeCompare(b.name));

@@ -55,6 +55,11 @@ service cloud.firestore {
     match /classConfig/{classId} {
       allow read:  if signedIn();
       allow write: if isAdmin();
+      // Teachers may add or remove holidays for their own class, and nothing else
+      allow update: if isTeacher()
+                    && classId == userClass()
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['holidays', 'updatedAt']);
     }
 
     // ── Drop Requests ──

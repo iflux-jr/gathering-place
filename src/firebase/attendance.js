@@ -2,9 +2,7 @@
 // Updated attendance system: semester weeks, multi-session, holidays
 
 import {
-  collection, getDocs, doc,
-  query, where, orderBy, setDoc, onSnapshot,
-  serverTimestamp, writeBatch,
+  collection, doc, query, where, orderBy, onSnapshot, serverTimestamp, writeBatch,
 } from 'firebase/firestore';
 import { db } from './config';
 import { getWeekNumber, getSemesterWeek } from '../utils/dateUtils';
@@ -13,7 +11,6 @@ const COL = 'attendance';
 
 /**
  * Deterministic doc ID: studentId_classId_W{semWk}_S{session}
- * Falls back to ISO week if no semester configured
  */
 function buildId(studentId, classId, semWeek, sessionNumber) {
   const safe = classId.replace(/\s+/g, '_');
@@ -33,7 +30,11 @@ export async function submitSessionAttendance(
   records, className, markedBy, sessionNumber, semester, isHoliday = false
 ) {
   const now        = new Date();
-  const semWeek    = semester ? (getSemesterWeek(now, semester) || 1) : getWeekNumber(now);
+  const semWeek    = getSemesterWeek(now, semester);
+  if (!semWeek) {
+    // Never file attendance outside the configured semester window
+    throw new Error('Attendance can only be recorded during the active semester.');
+  }
   const isoWeek    = getWeekNumber(now);
   const year       = now.getFullYear();
   const batch      = writeBatch(db);
@@ -60,40 +61,6 @@ export async function submitSessionAttendance(
 
   await batch.commit();
   return { semWeek, sessionNumber };
-}
-
-/**
- * Mark a single session as holiday (no student records needed — writes a sentinel doc)
- */
-export async function markSessionHoliday(className, semWeek, sessionNumber, markedBy) {
-  const holidayDocId = `HOLIDAY_${className.replace(/\s+/g,'_')}_W${semWeek}_S${sessionNumber}`;
-  await setDoc(doc(db, COL, holidayDocId), {
-    isHolidaySentinel: true,
-    className,
-    semesterWeek:  semWeek,
-    sessionNumber,
-    markedBy,
-    markedAt:      serverTimestamp(),
-  }, { merge: true });
-}
-
-/**
- * Get submitted sessions for a class in a given semester week
- * Returns: Set of session numbers already submitted
- */
-export async function getSubmittedSessions(className, semWeek) {
-  const q = query(
-    collection(db, COL),
-    where('className',    '==', className),
-    where('semesterWeek', '==', semWeek),
-  );
-  const snap = await getDocs(q);
-  const sessions = new Set();
-  snap.docs.forEach(d => {
-    const data = d.data();
-    if (!data.isHolidaySentinel) sessions.add(data.sessionNumber);
-  });
-  return sessions;
 }
 
 /**
@@ -167,32 +134,3 @@ export function calcAttendancePercentage(records) {
   return Math.round((present / countable.length) * 100);
 }
 
-/**
- * Weekly summary grouped by class (admin overview)
- */
-export async function getWeeklySummary(semWeek, className = null) {
-  let q;
-  if (className) {
-    q = query(collection(db, COL),
-      where('semesterWeek', '==', semWeek),
-      where('className', '==', className));
-  } else {
-    q = query(collection(db, COL), where('semesterWeek', '==', semWeek));
-  }
-  const snap    = await getDocs(q);
-  const records = snap.docs.map(d => d.data()).filter(r => !r.isHolidaySentinel && !r.isHoliday);
-  const summary = {};
-  for (const r of records) {
-    if (!summary[r.className]) summary[r.className] = { total: 0, present: 0, absent: 0 };
-    summary[r.className].total++;
-    if (r.present)       summary[r.className].present++;
-    else if (!r.isHoliday) summary[r.className].absent++;
-  }
-  return summary;
-}
-
-// ── Backward-compat alias used by old AdminDashboard code ──
-export { subscribeToAllAttendance as subscribeToClassAttendance };
-export async function submitClassAttendance(records, className, markedBy) {
-  return submitSessionAttendance(records, className, markedBy, 1, null, false);
-}

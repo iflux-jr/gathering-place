@@ -1,0 +1,73 @@
+# Checks every pull request and push to main, and deploys a preview of each pull request
+# to a Firebase Hosting preview channel once the FIREBASE_SERVICE_ACCOUNT_GATHERING_PLACE_D03E7 secret exists.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - name: Security rules tests (Firestore emulator)
+        run: npm run test:rules
+      - run: npm run build
+
+  preview:
+    needs: check
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    env:
+      HAS_FIREBASE_SECRET: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GATHERING_PLACE_D03E7 != '' }}
+    steps:
+      - name: Skip when Firebase secrets are not set up yet
+        if: env.HAS_FIREBASE_SECRET != 'true'
+        run: echo "::notice::Add the FIREBASE_SERVICE_ACCOUNT_GATHERING_PLACE_D03E7 secret to enable preview deploys (see README › Deployment)."
+      - uses: actions/checkout@v4
+        if: env.HAS_FIREBASE_SECRET == 'true'
+      - uses: actions/setup-node@v4
+        if: env.HAS_FIREBASE_SECRET == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - if: env.HAS_FIREBASE_SECRET == 'true'
+        run: npm ci
+      - if: env.HAS_FIREBASE_SECRET == 'true'
+        run: npm run build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        if: env.HAS_FIREBASE_SECRET == 'true'
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GATHERING_PLACE_D03E7 }}
+          projectId: gathering-place-d03e7
+          expires: 7d

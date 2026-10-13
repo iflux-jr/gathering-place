@@ -1,25 +1,19 @@
 // src/pages/TeacherDashboard.jsx — v2: sessions, semester, holidays, drop requests
 import { useState, useEffect, useMemo } from 'react';
 import {
-  Search, Send, RefreshCw, CheckSquare, XSquare,
-  Users, CheckCircle2, XCircle, BarChart2, School,
-  ShieldCheck, CalendarOff, ChevronRight, UserMinus,
-  AlertTriangle, Calendar, Clock,
+  Search, Send, CheckSquare, XSquare, Users, CheckCircle2, XCircle, BarChart2, School, ShieldCheck, CalendarOff, UserMinus, AlertTriangle, Calendar,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar   from '../components/shared/Navbar';
 import {
-  PageLoader, EmptyState, ClassBadge, AttendanceBadge,
-  StatCard, SkeletonRow, Alert, Modal, Spinner,
-  SessionPill, SemesterProgressBar, DropRequestBadge,
+  PageLoader, EmptyState, ClassBadge, AttendanceBadge, StatCard, Alert, Modal, Spinner, SessionPill, SemesterProgressBar, DropRequestBadge,
 } from '../components/shared/UIComponents';
 import { subscribeToStudentsByClass }                     from '../firebase/students';
-import { submitSessionAttendance, subscribeToWeekAttendance, calcAttendancePercentage } from '../firebase/attendance';
+import { submitSessionAttendance, subscribeToWeekAttendance } from '../firebase/attendance';
 import { subscribeToClassConfig, setHoliday, isHolidaySession } from '../firebase/classConfig';
 import { createDropRequest, subscribeToDropRequests }    from '../firebase/dropRequests';
 import {
-  currentSemesterWeek, getSemesterStatus, formatDateShort,
-  formatSemesterWeekLabel, getSemesterWeeks,
+  currentSemesterWeek, getSemesterStatus, formatDateShort, formatSemesterWeekLabel,
 } from '../utils/dateUtils';
 import useAuthStore   from '../store/authStore';
 import { CLASS_LABELS, SEMESTER_TOTAL_WEEKS } from '../utils/constants';
@@ -147,7 +141,7 @@ export default function TeacherDashboard() {
       await setHoliday(assignedClass, semWeek, activeSession, true, user.uid);
       toast.success(`Session ${activeSession} marked as holiday`);
       setHolidayModal(false);
-    } catch (err) {
+    } catch {
       toast.error('Failed to mark holiday');
     } finally {
       setMarkingHoliday(false);
