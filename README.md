@@ -583,9 +583,9 @@ The project is moving from Netlify to **Firebase Hosting**, so the site, Firesto
 ### One-time setup for Firebase Hosting deploys
 
 1. Install the Firebase CLI (`npm install -g firebase-tools`) and run `firebase login`.
-2. In the project folder, run `firebase init hosting:github`. When asked, choose the existing project `gathering-place-d03e7` and repository `iflux-jr/gathering-place`, and answer **No** to overwriting the workflow files and **No** to overwriting `firebase.json`. This creates a service account and stores it as a GitHub secret.
-3. In GitHub, open **Settings → Secrets and variables → Actions** and check that the CLI created a secret named `FIREBASE_SERVICE_ACCOUNT_GATHERING_PLACE_D03E7`. The workflows already use that name. If the CLI also wrote new workflow files, delete them; the ones in `.github/workflows/` cover the same jobs.
-4. Add the six web app values as secrets with the same names as in `.env`: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`.
+2. In the project folder, run `firebase init hosting:github`. Choose project `gathering-place-d03e7` and repository `iflux-jr/gathering-place`, and answer **No** to the build-script and deploy-on-merge questions. This creates a service account and stores it as the GitHub secret `FIREBASE_SERVICE_ACCOUNT_GATHERING_PLACE_D03E7`, which the workflows already use. Afterwards, undo the files it writes: `git checkout -- firebase.json .firebaserc` and delete `.github/workflows/firebase-hosting-pull-request.yml`.
+3. The new service account (`github-action-…`) can only deploy hosting. In Google Cloud Console → IAM for the project, edit it and add the roles **Firebase Rules Admin** and **Cloud Datastore Index Admin** so the deploy can publish rules and indexes too.
+4. Add the six web app values as secrets with the same names as in `.env`: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`. Without them the site builds but can't connect to Firebase.
 5. Merge to `main` (or run **Deploy** from the Actions tab). The site is then live at `https://gathering-place-d03e7.web.app`.
 6. Optional: connect a custom domain under Firebase Console → Hosting → Add custom domain, then retire the Netlify site.
 
