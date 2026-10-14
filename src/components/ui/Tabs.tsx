@@ -23,22 +23,22 @@ interface TabsProps {
 export function Tabs({ value, onValueChange, items, label, children, className }: TabsProps) {
   return (
     <TabsPrimitive.Root value={value} onValueChange={onValueChange} className={className}>
-      <TabsPrimitive.List aria-label={label} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+      <TabsPrimitive.List aria-label={label} className="flex max-w-full gap-1 overflow-x-auto rounded-full bg-subtle p-1 sm:inline-flex">
         {items.map(item => (
           <TabsPrimitive.Trigger
             key={item.value}
             value={item.value}
             className={cn(
-              'inline-flex min-h-[40px] items-center gap-2 whitespace-nowrap rounded-full border-1.5 border-ink px-4',
-              'font-body text-small font-bold transition-colors',
+              'inline-flex min-h-[36px] flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 sm:flex-none',
+              'font-body text-small font-semibold transition-colors',
               'focus-visible:outline-none focus-visible:shadow-focus',
-              'data-[state=active]:bg-ink data-[state=active]:text-white',
-              'data-[state=inactive]:bg-surface data-[state=inactive]:text-ink data-[state=inactive]:hover:bg-canvas',
+              'data-[state=active]:bg-surface data-[state=active]:text-ink data-[state=active]:shadow-sm',
+              'data-[state=inactive]:text-muted data-[state=inactive]:hover:text-ink',
             )}
           >
             {item.label}
             {item.count ? (
-              <span className="rounded-full bg-flame-500 px-1.5 py-0.5 text-caption font-bold leading-none text-ink">
+              <span className="rounded-full bg-accent-600 px-1.5 py-0.5 text-caption font-semibold leading-none text-white tabular-nums">
                 {item.count}
               </span>
             ) : null}

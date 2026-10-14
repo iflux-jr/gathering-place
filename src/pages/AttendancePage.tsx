@@ -80,7 +80,7 @@ export default function AttendancePage() {
           description="Set its semester dates on the Classes page." />
       ) : (
         <Card className="grid gap-4">
-          <div className="rounded-md border-1.5 border-ink p-2">
+          <div className="rounded-md border border-line p-2">
             <WeekPicker week={week || lastWeek} lastWeek={lastWeek} totalWeeks={total} currentWeek={current} semester={semester!} onChange={setWeek} />
           </div>
           {!records ? (
@@ -92,7 +92,7 @@ export default function AttendancePage() {
               <table className="w-full min-w-[320px] border-collapse text-small">
                 <caption className="sr-only">{lookup.label(classId)}, week {week}</caption>
                 <thead>
-                  <tr className="border-b-1.5 border-ink text-left">
+                  <tr className="border-b border-line-strong text-left">
                     <th scope="col" className="py-2 pr-3 font-semibold">Student</th>
                     {sessionNums.map(n => (
                       <th key={n} scope="col" className="px-2 py-2 text-center font-semibold">
@@ -111,7 +111,7 @@ export default function AttendancePage() {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr className="border-t-1.5 border-ink">
+                  <tr className="border-t border-line-strong">
                     <th scope="row" className="py-2 pr-3 text-left font-semibold">Present</th>
                     {sessionNums.map(n => {
                       const rs = (records ?? []).filter(r => r.sessionNumber === n && r.present !== null);

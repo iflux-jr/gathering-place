@@ -28,7 +28,7 @@ export function RequestsPanel({ drops, uid }: { drops: DropRequest[]; uid: strin
   return (
     <ul className="grid gap-2">
       {drops.map(r => (
-        <li key={r.id} className="grid gap-2 rounded-md border-1.5 border-line bg-surface p-4">
+        <li key={r.id} className="grid gap-2 rounded-md border border-line bg-surface p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-semibold">{r.studentName}</p>
             <StatusPill status={r.status as Status} size="sm" />

@@ -65,7 +65,7 @@ export function RosterPanel({ classId, uid, config, students, drops, canRequestD
           const other = (s.classes ?? []).filter(c => c !== classId);
           const pending = pendingFor(s.id);
           return (
-            <li key={s.id} className="grid gap-3 rounded-md border-1.5 border-line bg-surface p-4 sm:grid-cols-[minmax(0,1fr)_200px_auto] sm:items-center">
+            <li key={s.id} className="grid gap-3 rounded-md border border-line bg-surface p-4 sm:grid-cols-[minmax(0,1fr)_200px_auto] sm:items-center">
               <div className="min-w-0">
                 <p className="truncate font-semibold">{s.name}</p>
                 <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted">

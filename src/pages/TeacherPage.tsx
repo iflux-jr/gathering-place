@@ -104,7 +104,7 @@ function ClassView({ classId, uid, isAdmin }: { classId: string; uid: string; is
           <>
             <ProgressBar value={currentWeek ?? totalWeeks} max={totalWeeks} label="Semester progress" track="rgba(27,26,23,.15)"
               valueText={status === 'ended' ? 'Semester ended' : `Week ${currentWeek} of ${totalWeeks}`} />
-            <div className="rounded-md border-1.5 border-ink bg-surface p-2">
+            <div className="rounded-md border border-line bg-surface p-2">
               <WeekPicker week={week} lastWeek={lastWeek} totalWeeks={totalWeeks} currentWeek={currentWeek} semester={semester} onChange={setWeek} />
             </div>
             {sessionsPerWeek > 1 && (

@@ -6,7 +6,7 @@ import { Archive, CalendarDays, Check, GraduationCap, Pencil, Plus, RotateCcw, U
 import toast from 'react-hot-toast';
 import { PageHeader } from '../components/layout/PageHeader';
 import {
-  Button, Card, Dialog, EmptyState, ErrorState, Field, Input, LoadingList, Select, buttonVariants,
+  Button, Dialog, EmptyState, ErrorState, Field, Input, LoadingList, Select, buttonVariants,
 } from '../components/ui';
 import {
   ClassError, addClass, assignTeacher, classUsage, countStudentsByClass, deleteClass, setClassStatus, updateClass,
@@ -105,31 +105,34 @@ function ClassCard({ entry, config, students, teachers, onEdit }: {
   const status = getSemesterStatus(semester);
   const sessions = config?.sessionsPerWeek ?? 1;
   return (
-    <Card tone={color.surface} as="article" className="grid h-full content-start gap-4">
-      <div className="flex items-start justify-between gap-2">
+    <article className="flex h-full flex-col rounded-card border border-line bg-surface p-2 shadow-sm">
+      <div className="grid flex-1 content-start gap-4 rounded-[14px] p-4" style={{ backgroundColor: color.surface }}>
         <h2 className="font-heading text-h2">{entry.label}</h2>
-        <Button size="sm" variant="outline" onClick={onEdit} aria-label={`Edit ${entry.label}`}>
+        <dl className="grid gap-2 text-small">
+          <Row icon={<GraduationCap size={16} />} term="Teacher">
+            {teachers.length ? teachers.map(nameOf).join(', ') : <span className="font-semibold">No teacher yet</span>}
+          </Row>
+          <Row icon={<CalendarDays size={16} />} term="Semester">
+            {semester?.startDate && semester.endDate ? (
+              <>
+                {semester.label ? `${semester.label}, ` : ''}{formatDateShort(semester.startDate)} to {formatDateShort(semester.endDate)}
+                {status === 'ended' && <span className="font-semibold"> (ended)</span>}
+                <br />{sessions} {sessions === 1 ? 'session' : 'sessions'} a week
+              </>
+            ) : <span className="font-semibold">Not set up</span>}
+          </Row>
+        </dl>
+      </div>
+      <div className="flex items-center justify-between gap-2 px-2 pb-1 pt-3">
+        <p className="flex items-center gap-2 text-small">
+          <Users size={16} aria-hidden="true" />
+          <span className="font-semibold">{students === undefined ? '…' : `${students} ${students === 1 ? 'student' : 'students'}`}</span>
+        </p>
+        <Button size="sm" onClick={onEdit} aria-label={`Edit ${entry.label}`}>
           <Pencil size={14} aria-hidden="true" /> Edit
         </Button>
       </div>
-      <dl className="grid gap-2 text-small">
-        <Row icon={<Users size={16} />} term="Students">
-          {students === undefined ? '…' : `${students} ${students === 1 ? 'student' : 'students'}`}
-        </Row>
-        <Row icon={<GraduationCap size={16} />} term="Teacher">
-          {teachers.length ? teachers.map(nameOf).join(', ') : <span className="font-semibold">No teacher yet</span>}
-        </Row>
-        <Row icon={<CalendarDays size={16} />} term="Semester">
-          {semester?.startDate && semester.endDate ? (
-            <>
-              {semester.label ? `${semester.label}, ` : ''}{formatDateShort(semester.startDate)} to {formatDateShort(semester.endDate)}
-              {status === 'ended' && <span className="font-semibold"> (ended)</span>}
-              <br />{sessions} {sessions === 1 ? 'session' : 'sessions'} a week
-            </>
-          ) : <span className="font-semibold">Not set up</span>}
-        </Row>
-      </dl>
-    </Card>
+    </article>
   );
 }
 
@@ -155,9 +158,9 @@ function RetiredRow({ entry, uid }: { entry: ClassEntry; uid: string }) {
     }
   }
   return (
-    <li className="flex items-center justify-between gap-3 rounded-md border-1.5 border-line bg-surface py-2 pl-4 pr-2">
+    <li className="flex items-center justify-between gap-3 rounded-md border border-line bg-surface py-2 pl-4 pr-2">
       <span className="flex items-center gap-2.5 font-semibold">
-        <span className="h-3 w-3 rounded-full border border-ink" style={{ backgroundColor: getClassColor(entry.id, entry.colorKey).surface }} aria-hidden="true" />
+        <span className="h-3 w-3 rounded-full" style={{ backgroundColor: getClassColor(entry.id, entry.colorKey).strong }} aria-hidden="true" />
         {entry.label}
       </span>
       <Button size="sm" variant="ghost" loading={busy} onClick={restore}><RotateCcw size={14} aria-hidden="true" /> Restore</Button>
@@ -347,7 +350,7 @@ function EditDialog({ entry, config, users, uid, onClose, onChanged }: {
               ))}
             </Select>
           </Field>
-          <fieldset className="grid gap-4 rounded-card border-1.5 border-line p-4">
+          <fieldset className="grid gap-4 rounded-card border border-line p-4">
             <legend className="px-1 font-body text-small font-semibold">This semester</legend>
             <Field label="Name" optional hint="For example, Jan to Mar 2026">
               <Input value={form.label} maxLength={40} onChange={set('label')} />

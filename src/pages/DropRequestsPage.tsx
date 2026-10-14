@@ -67,7 +67,7 @@ export default function DropRequestsPage() {
   ) : (
     <ul className="grid gap-2">
       {rows.map(r => (
-        <li key={r.id} className="grid gap-3 rounded-md border-1.5 border-line bg-surface p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <li key={r.id} className="grid gap-3 rounded-md border border-line bg-surface p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
           <div className="grid gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
               <p className="font-semibold">{r.studentName}</p>

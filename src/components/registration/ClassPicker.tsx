@@ -25,7 +25,7 @@ export function ClassPicker({ options, value, onChange, error, disabled }: Class
     <fieldset className="grid gap-2" aria-describedby="class-picker-count class-picker-error">
       <div className="flex items-baseline justify-between gap-3">
         <legend className="font-body text-small font-semibold text-ink">
-          Classes<span aria-hidden="true" className="text-flame-600"> *</span>
+          Classes<span aria-hidden="true" className="text-bad-fg"> *</span>
         </legend>
         <p id="class-picker-count" className="text-small text-muted" aria-live="polite">
           {value.length} of {MAX_CLASSES_PER_STUDENT} chosen

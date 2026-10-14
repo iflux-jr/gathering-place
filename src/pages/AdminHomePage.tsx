@@ -62,7 +62,7 @@ export default function AdminHomePage() {
       <PageHeader eyebrow={`${greeting()}, ${firstName(profile?.name)}`} title="Overview" />
 
       {!regOpen && (
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-card border-1.5 border-ink bg-bad-bg p-4 text-bad-fg">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-card border border-bad-fg/20 bg-bad-bg p-4 text-bad-fg">
           <p className="flex items-center gap-2 font-semibold"><Lock size={18} aria-hidden="true" /> Sign-ups are paused. The public form is closed.</p>
           <Link to="/admin/settings" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Open sign-ups</Link>
         </div>
@@ -72,7 +72,7 @@ export default function AdminHomePage() {
         <section aria-labelledby="needs-heading" className="mb-8">
           <h2 id="needs-heading" className="mb-3 font-heading text-h3">Waiting for you</h2>
           <ul className="grid gap-3 sm:grid-cols-3">
-            {signups > 0 && <Todo to="/admin/registrations" icon={<Inbox size={20} />} tone="bg-lime" title={`${signups} ${signups === 1 ? 'sign-up' : 'sign-ups'} to review`} />}
+            {signups > 0 && <Todo to="/admin/registrations" icon={<Inbox size={20} />} tone="bg-mint" title={`${signups} ${signups === 1 ? 'sign-up' : 'sign-ups'} to review`} />}
             {drops > 0 && <Todo to="/admin/requests" icon={<UserMinus size={20} />} tone="bg-warn-bg" title={`${drops} drop ${drops === 1 ? 'request' : 'requests'}`} />}
             {setupGaps > 0 && <Todo to="/admin/classes" icon={<LayoutGrid size={20} />} tone="bg-surface" title={`${setupGaps} ${setupGaps === 1 ? 'class needs' : 'classes need'} a semester or teacher`} />}
           </ul>
@@ -97,7 +97,7 @@ export default function AdminHomePage() {
               <h2 id="week-heading" className="font-heading text-h3">This week’s registers</h2>
               <p className="text-small text-muted">Which sessions each teacher has sent.</p>
             </div>
-            <ul className="grid gap-2">
+            <ul className="divide-y divide-line">
               {classes.map(c => (
                 <RegisterRow key={c.id} id={c.id} label={c.label} colorKey={c.colorKey} config={configs[c.id]}
                   sent={stats.sent} rate={stats.byClass[c.id]?.rate ?? null} students={counts?.[c.id]} />
@@ -131,7 +131,7 @@ function Todo({ to, icon, title, tone }: { to: string; icon: ReactNode; title: s
   return (
     <li>
       <Link to={to} className={cn(
-        'flex min-h-touch items-center gap-3 rounded-md border-1.5 border-ink p-4 font-semibold transition-shadow',
+        'flex min-h-touch items-center gap-3 rounded-md border border-line p-4 font-semibold transition-shadow',
         'hover:shadow-sm focus-visible:outline-none focus-visible:shadow-focus', tone,
       )}>
         <span aria-hidden="true">{icon}</span>
@@ -177,8 +177,8 @@ function RegisterRow({ id, label, colorKey, config, sent, rate, students }: {
   }
 
   return (
-    <li className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border-1.5 border-line bg-surface p-3">
-      <span className="h-8 w-2 rounded-full border border-ink" style={{ backgroundColor: color.surface }} aria-hidden="true" />
+    <li className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-3 first:pt-0 last:pb-0">
+      <span className="h-8 w-2 rounded-full" style={{ backgroundColor: color.strong }} aria-hidden="true" />
       <div className="min-w-0">
         <p className="truncate font-semibold">{label}</p>
         <div className="text-small">{detail}</div>
@@ -199,7 +199,7 @@ function WeekBars({ weeks }: { weeks: { week: number; rate: number | null }[] })
           <div key={w.week} role="listitem" className="flex h-full flex-1 flex-col items-center justify-end gap-1"
             aria-label={`Week ${w.week}: ${w.rate === null ? 'nothing marked' : `${w.rate}%`}`}>
             <span className="text-caption font-semibold tabular-nums" aria-hidden="true">{w.rate ?? '—'}</span>
-            <div className="w-full rounded-t-[6px] border-1.5 border-ink bg-flame-500" style={{ height: `${Math.max(2, w.rate ?? 0)}%` }} aria-hidden="true" />
+            <div className="w-full rounded-t-[6px] bg-accent-500" style={{ height: `${Math.max(2, w.rate ?? 0)}%` }} aria-hidden="true" />
           </div>
         ))}
       </div>

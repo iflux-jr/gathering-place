@@ -103,7 +103,7 @@ function Result({ code, doc }: { code: string; doc: RegistrationStatusDoc }) {
       </div>
       <p className="text-muted">{view.body}</p>
       {doc.status === 'declined' && doc.note && (
-        <blockquote className="rounded-xs border-l-4 border-ink bg-subtle px-4 py-3 text-small">
+        <blockquote className="rounded-xs border-l-4 border-accent-500 bg-subtle px-4 py-3 text-small">
           <span className="font-semibold">Note from the admin: </span>{doc.note}
         </blockquote>
       )}

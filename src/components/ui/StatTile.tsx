@@ -15,13 +15,13 @@ interface StatTileProps {
 export function StatTile({ label, value, sub, tone, icon, className }: StatTileProps) {
   return (
     <div
-      className={cn('flex min-w-0 items-center gap-3 rounded-md border-1.5 border-ink p-3 sm:p-4', !tone && 'bg-surface', className)}
+      className={cn('flex min-w-0 items-center gap-3 rounded-md border p-3 sm:p-4', tone ? 'border-transparent' : 'border-line bg-surface', className)}
       style={tone ? { backgroundColor: tone } : undefined}
     >
-      {icon && <span aria-hidden="true" className="grid h-10 w-10 flex-none place-items-center rounded-full bg-surface/70">{icon}</span>}
+      {icon && <span aria-hidden="true" className={cn('grid h-10 w-10 flex-none place-items-center rounded-full', tone ? 'bg-surface/70' : 'bg-subtle')}>{icon}</span>}
       <div className="min-w-0">
-        <p className="font-heading text-h2 leading-none tabular-nums text-ink">{value}</p>
-        <p className="mt-1 truncate text-small font-semibold text-ink">{label}</p>
+        <p className="font-heading text-h2 leading-none tabular-nums text-ink md:text-h2-lg">{value}</p>
+        <p className="mt-1.5 truncate text-small font-medium text-ink/80">{label}</p>
         {sub && <p className="truncate text-caption text-muted">{sub}</p>}
       </div>
     </div>

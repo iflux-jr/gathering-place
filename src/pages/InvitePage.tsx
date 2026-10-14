@@ -39,7 +39,7 @@ export default function InvitePage() {
       />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] print:block">
         <Card className="grid justify-items-center gap-4 py-8 text-center print:border-0">
-          <div className="rounded-card border-1.5 border-ink bg-white p-4">
+          <div className="rounded-card border border-line bg-white p-4">
             <QRCodeSVG value={url} size={220} fgColor={colors.ink.DEFAULT} bgColor="#FFFFFF" level="M"
               role="img" aria-label={`QR code for ${url}`} />
           </div>

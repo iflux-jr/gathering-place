@@ -109,8 +109,8 @@ export function RegisterPanel({ classId, uid, week, session, semester, students,
 
   if (holiday) {
     return (
-      <div className="grid justify-items-center gap-3 rounded-card border-1.5 border-ink bg-violet-50 px-6 py-10 text-center">
-        <span className="grid h-12 w-12 place-items-center rounded-full bg-violet-100 text-violet-700" aria-hidden="true">
+      <div className="grid justify-items-center gap-3 rounded-card bg-accent-50 px-6 py-10 text-center">
+        <span className="grid h-12 w-12 place-items-center rounded-full bg-accent-100 text-accent-700" aria-hidden="true">
           <CalendarOff size={22} />
         </span>
         <h3 className="font-heading text-h3">No class this session</h3>
@@ -173,7 +173,7 @@ export function RegisterPanel({ classId, uid, week, session, semester, students,
 
       <ul className="grid gap-2" aria-label={`Students, week ${week} session ${session}`}>
         {shown.map(s => (
-          <li key={s.id} className="flex items-center gap-3 rounded-md border-1.5 border-line bg-surface py-2 pl-4 pr-2">
+          <li key={s.id} className="flex items-center gap-3 rounded-md border border-line bg-surface py-2 pl-4 pr-2">
             <div className="min-w-0 flex-1">
               <p className="truncate font-semibold">{s.name}</p>
               {s.id in marks && marks[s.id] !== saved[s.id] && <p className="text-caption text-warn-fg">Changed, not sent</p>}
@@ -188,7 +188,7 @@ export function RegisterPanel({ classId, uid, week, session, semester, students,
       </ul>
 
       <div className="fixed inset-x-0 bottom-[calc(72px+env(safe-area-inset-bottom))] z-20 px-4 lg:bottom-6 lg:left-64">
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 rounded-full border-1.5 border-ink bg-surface py-2 pl-5 pr-2 shadow-lg">
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 rounded-full border border-line bg-surface py-2 pl-5 pr-2 shadow-lg">
           <p className="text-small font-semibold">
             {unmarked ? `${students.length - unmarked} of ${students.length} marked` : 'Everyone marked'}
           </p>
@@ -223,7 +223,7 @@ function MarkButton({ kind, pressed, onClick }: { kind: 'present' | 'absent'; pr
       onClick={onClick}
       className={cn(
         'inline-flex min-h-touch min-w-[88px] items-center justify-center gap-1.5 rounded-full border-1.5 px-3',
-        'font-body text-small font-bold transition-colors duration-100',
+        'font-body text-small font-semibold transition-colors duration-100',
         'focus-visible:outline-none focus-visible:shadow-focus',
         pressed
           ? kind === 'present' ? 'border-ok-fg bg-ok-bg text-ok-fg' : 'border-bad-fg bg-bad-bg text-bad-fg'

@@ -18,14 +18,14 @@ export function AuthLayout({ title, description, children }: { title: string; de
           </p>
           <ul className="flex max-w-md flex-wrap gap-2" aria-label="Classes">
             {classes.map(c => (
-              <li key={c.id} className="rounded-full border-1.5 border-ink px-3 py-1.5 text-small font-semibold text-ink"
+              <li key={c.id} className="rounded-full px-3 py-1.5 text-small font-medium text-ink"
                 style={{ backgroundColor: getClassColor(c.id, c.colorKey).surface }}>
                 {c.label}
               </li>
             ))}
           </ul>
         </div>
-        <p className="text-small text-[#D9D5CB]">The Gathering Place · Young Single Adults</p>
+        <p className="text-small text-onDark-muted">The Gathering Place · Young Single Adults</p>
       </aside>
       <main className="flex flex-col px-4 pb-10 pt-[calc(env(safe-area-inset-top)+20px)] sm:px-8">
         <Link to="/" className="self-start rounded-md focus-visible:outline-none focus-visible:shadow-focus lg:hidden" aria-label="The Gathering Place, home">

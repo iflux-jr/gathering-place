@@ -6,7 +6,7 @@ export function Skeleton({ className }: { className?: string }) {
     <span
       aria-hidden="true"
       className={cn(
-        'block rounded-[10px] bg-[linear-gradient(90deg,#ECEAE4_0%,#F6F4EE_50%,#ECEAE4_100%)] bg-[length:200%_100%]',
+        'block rounded-[10px] bg-[linear-gradient(90deg,#EEF0F3_0%,#F7F8FA_50%,#EEF0F3_100%)] bg-[length:200%_100%]',
         'animate-shimmer motion-reduce:animate-none',
         className,
       )}

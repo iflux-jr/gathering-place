@@ -28,13 +28,21 @@ describe('design token contrast (WCAG AA)', () => {
   });
 
   it('primary button and body text pairs', () => {
-    expect(contrast(WHITE, colors.flame[600])).toBeGreaterThanOrEqual(AA);
-    expect(contrast(WHITE, colors.flame[700])).toBeGreaterThanOrEqual(AA);
+    expect(contrast(WHITE, colors.ink.DEFAULT)).toBeGreaterThanOrEqual(AA);
+    expect(contrast(WHITE, colors.ink[3])).toBeGreaterThanOrEqual(AA);
+    expect(contrast(colors.ink.DEFAULT, colors.accent[300])).toBeGreaterThanOrEqual(AA);
+    expect(contrast(colors.ink.DEFAULT, colors.accent[500])).toBeGreaterThanOrEqual(AA);
+    expect(contrast(colors.accent[600], WHITE)).toBeGreaterThanOrEqual(AA);
+    expect(contrast(colors.onDark.muted, colors.ink.DEFAULT)).toBeGreaterThanOrEqual(AA);
     expect(contrast(colors.ink.DEFAULT, colors.canvas)).toBeGreaterThanOrEqual(AA);
     expect(contrast(colors.muted, colors.canvas)).toBeGreaterThanOrEqual(AA);
     expect(contrast(colors.muted, WHITE)).toBeGreaterThanOrEqual(AA);
-    expect(contrast(colors.ink.DEFAULT, colors.lime.DEFAULT)).toBeGreaterThanOrEqual(AA);
-    expect(contrast(colors.ink.DEFAULT, colors.flame[500])).toBeGreaterThanOrEqual(AA);
-    expect(contrast(WHITE, colors.ink.DEFAULT)).toBeGreaterThanOrEqual(AA);
+    for (const pastel of [colors.butter, colors.sky, colors.lilac, colors.pink, colors.mint, colors.peach, colors.clay]) {
+      expect(contrast(colors.ink.DEFAULT, pastel)).toBeGreaterThanOrEqual(AA);
+    }
+  });
+
+  it('form control edges are visible (WCAG 1.4.11, 3:1)', () => {
+    expect(contrast(colors.line.control, WHITE)).toBeGreaterThanOrEqual(3);
   });
 });

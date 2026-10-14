@@ -79,11 +79,11 @@ export default function StudentsPage() {
       ) : (
         <>
           <p className="mb-2 text-small text-muted" aria-live="polite">{shown.length} shown</p>
-          <ul className="grid gap-2">
+          <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-sm">
             {shown.map(s => (
               <li key={s.id}>
                 <button type="button" onClick={() => setOpen(s)}
-                  className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-md border-1.5 border-line bg-surface p-3 text-left transition-colors hover:border-ink focus-visible:outline-none focus-visible:shadow-focus sm:grid-cols-[auto_minmax(0,1fr)_auto]">
+                  className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_#1F64B0] sm:grid-cols-[auto_minmax(0,1fr)_auto]">
                   <Avatar name={s.name} />
                   <span className="min-w-0">
                     <span className="block truncate font-semibold">{s.name}</span>
@@ -166,7 +166,7 @@ function StudentDialog({ student, onClose }: { student: Student | null; onClose:
                 const r = rateFor(c);
                 const pct = r.total ? Math.round((r.present / r.total) * 100) : null;
                 return (
-                  <div key={c} className="grid gap-2 rounded-md border-1.5 border-line p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
+                  <div key={c} className="grid gap-2 rounded-md border border-line p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
                     <ClassChip classId={c} />
                     <div className="grid gap-1">
                       <div className="flex justify-between text-small">

@@ -53,7 +53,7 @@ export default function ArchivePage() {
               const sem = configs[c.id].semester!;
               const ended = getSemesterStatus(sem) === 'ended';
               return (
-                <li key={c.id} className="flex items-center justify-between gap-3 rounded-md border-1.5 border-line bg-surface p-4">
+                <li key={c.id} className="flex items-center justify-between gap-3 rounded-md border border-line bg-surface p-4">
                   <div className="grid min-w-0 gap-1.5">
                     <ClassChip classId={c.id} size="sm" className="justify-self-start" />
                     <p className="text-small text-muted">{sem.label ? `${sem.label}, ` : ''}{ended ? 'ended' : 'ends'} {formatDateShort(sem.endDate)}</p>
@@ -109,7 +109,7 @@ function ArchiveRow({ entry, open, onToggle }: { entry: ArchiveEntry; open: bool
   const present = counted.filter(r => r.present).length;
 
   return (
-    <li className="rounded-md border-1.5 border-line bg-surface">
+    <li className="rounded-md border border-line bg-surface">
       <button type="button" onClick={onToggle} aria-expanded={open}
         className="flex w-full items-center gap-3 p-4 text-left focus-visible:outline-none focus-visible:shadow-focus">
         <ClassChip classId={entry.classId} size="sm" />
@@ -123,7 +123,7 @@ function ArchiveRow({ entry, open, onToggle }: { entry: ArchiveEntry; open: bool
         <ChevronDown size={18} aria-hidden="true" className={cn('transition-transform', open && 'rotate-180')} />
       </button>
       {open && (
-        <div className="grid gap-4 border-t-1.5 border-line p-4">
+        <div className="grid gap-4 border-t border-line p-4">
           {error ? <p className="text-small text-bad-fg">Couldn’t load this archive.</p> : !data ? <LoadingList rows={2} label="Loading archive" /> : (
             <>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

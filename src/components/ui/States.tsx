@@ -25,7 +25,7 @@ function StateFrame({ title, description, action, icon, className, tone }: State
 
 /** Nothing to show yet, with a next step where there is one */
 export function EmptyState(props: StateProps) {
-  return <StateFrame {...props} tone="border-1.5 border-dashed border-line-strong bg-surface" />;
+  return <StateFrame {...props} tone="border border-dashed border-line-strong bg-surface" />;
 }
 
 interface ErrorStateProps extends Omit<StateProps, 'title'> {

@@ -107,7 +107,7 @@ function StaffSection() {
       ) : (
         <ul className="grid gap-2">
           {staff.map(u => (
-            <li key={u.id} className="flex flex-wrap items-center gap-3 rounded-md border-1.5 border-line bg-surface p-3">
+            <li key={u.id} className="flex flex-wrap items-center gap-3 rounded-md border border-line bg-surface p-3">
               <Avatar name={nameOf(u)} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{nameOf(u)}{u.id === me && <span className="font-normal text-muted"> (you)</span>}</p>

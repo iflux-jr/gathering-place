@@ -18,14 +18,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           style: {
             background:   colors.ink.DEFAULT,
             color:        '#FFFFFF',
-            fontFamily:   'Plus Jakarta Sans, system-ui, sans-serif',
+            fontFamily:   'DM Sans, system-ui, sans-serif',
             fontSize:     '15px',
-            fontWeight:   600,
+            fontWeight:   500,
             borderRadius: '999px',
             padding:      '10px 18px',
           },
-          success: { iconTheme: { primary: colors.lime.DEFAULT, secondary: colors.ink.DEFAULT } },
-          error:   { iconTheme: { primary: colors.flame[500], secondary: colors.ink.DEFAULT } },
+          success: { iconTheme: { primary: colors.ok.solid, secondary: colors.ink.DEFAULT } },
+          error:   { iconTheme: { primary: '#F04438', secondary: colors.ink.DEFAULT } },
         }}
       />
     </BrowserRouter>

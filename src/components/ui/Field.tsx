@@ -6,10 +6,10 @@ import {
 import { cn } from '../../lib/cn';
 
 const controlBase = [
-  'w-full min-h-touch rounded-[12px] border-1.5 border-line-strong bg-surface px-3.5',
+  'w-full min-h-touch rounded-[10px] border border-line-control bg-surface px-3.5',
   'font-body text-body text-ink placeholder:text-muted',
   'transition-colors hover:border-ink',
-  'focus-visible:outline-none focus-visible:border-ink focus-visible:shadow-focus',
+  'focus-visible:outline-none focus-visible:border-accent-600 focus-visible:ring-4 focus-visible:ring-accent-100',
   'disabled:cursor-not-allowed disabled:bg-subtle disabled:opacity-70',
   'aria-[invalid=true]:border-bad-fg',
 ].join(' ');
@@ -45,9 +45,9 @@ export function Field({ label, hint, error, required, optional, className, child
 
   return (
     <div className={cn('grid gap-1.5', className)}>
-      <label htmlFor={id} className="font-body text-small font-semibold text-ink">
+      <label htmlFor={id} className="font-body text-small font-medium text-ink">
         {label}
-        {required && <span aria-hidden="true" className="text-flame-600"> *</span>}
+        {required && <span aria-hidden="true" className="text-bad-fg"> *</span>}
         {optional && <span className="font-normal text-muted"> (optional)</span>}
       </label>
       {hint && <p id={hintId} className="text-small text-muted">{hint}</p>}

@@ -113,7 +113,7 @@ export default function AddStudentPage() {
       />
 
       {!regOpen && (
-        <p className="mb-4 flex items-start gap-2 rounded-xs border-1.5 border-warn-fg bg-warn-bg px-4 py-3 text-small font-semibold text-warn-fg">
+        <p className="mb-4 flex items-start gap-2 rounded-xs border border-warn-fg/25 bg-warn-bg px-4 py-3 text-small font-semibold text-warn-fg">
           <Lock size={16} className="mt-0.5 flex-none" aria-hidden="true" />
           Public sign-ups are paused. You can still add students here.
         </p>
@@ -179,7 +179,7 @@ export default function AddStudentPage() {
       {added && (
         <Dialog open={qrOpen} onOpenChange={setQrOpen} title="Student QR code" description={`Scan to check in ${added.name}.`}>
           <div className="grid justify-items-center gap-3">
-            <div className="rounded-card border-1.5 border-ink bg-white p-4">
+            <div className="rounded-card border border-line bg-white p-4">
               <QRCodeSVG value={`gathering-place://student/${added.id}`} size={192} fgColor={colors.ink.DEFAULT} bgColor="#FFFFFF" level="M" />
             </div>
             <p className="font-mono text-caption text-muted">ID {added.id}</p>

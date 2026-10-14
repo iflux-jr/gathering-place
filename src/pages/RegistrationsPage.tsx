@@ -207,11 +207,11 @@ function PendingQueue({ rows, error, retry }: ReturnType<typeof useRegistrations
 
       {chosen.length > 0 && (
         <div className="fixed inset-x-0 bottom-[calc(72px+env(safe-area-inset-bottom))] z-30 px-4 lg:bottom-6 lg:left-[256px]">
-          <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 rounded-full border-1.5 border-ink bg-ink py-2 pl-5 pr-2 text-white shadow-lg">
+          <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 rounded-full border border-line bg-ink py-2 pl-5 pr-2 text-white shadow-lg">
             <p className="text-small font-semibold">{chosen.length} selected</p>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" disabled={!!busy} onClick={() => setDeclining(chosen)}>Decline</Button>
-              <Button size="sm" variant="lime" disabled={!!busy} onClick={() => accept(chosen)}>Accept {chosen.length}</Button>
+              <Button size="sm" variant="accent" disabled={!!busy} onClick={() => accept(chosen)}>Accept {chosen.length}</Button>
             </div>
           </div>
         </div>
