@@ -6,7 +6,7 @@ export function Skeleton({ className }: { className?: string }) {
     <span
       aria-hidden="true"
       className={cn(
-        'block rounded-[10px] bg-[linear-gradient(90deg,#EEF0F3_0%,#F7F8FA_50%,#EEF0F3_100%)] bg-[length:200%_100%]',
+        'block rounded-control bg-[linear-gradient(90deg,#EEF0F3_0%,#F7F8FA_50%,#EEF0F3_100%)] bg-[length:200%_100%]',
         'animate-shimmer motion-reduce:animate-none',
         className,
       )}
@@ -14,16 +14,16 @@ export function Skeleton({ className }: { className?: string }) {
   );
 }
 
-/** A list-row shaped skeleton: avatar, two text lines, action */
+/** A list-row shaped skeleton: avatar, two text lines, action. Sits inside a ListGroup. */
 export function SkeletonRow({ className }: { className?: string }) {
   return (
-    <div className={cn('flex items-center gap-3 rounded-md border border-line bg-surface p-3', className)} aria-hidden="true">
+    <div className={cn('flex items-center gap-3 px-4 py-3.5 sm:px-5', className)} aria-hidden="true">
       <Skeleton className="h-10 w-10 flex-none rounded-full" />
       <div className="grid flex-1 gap-2">
         <Skeleton className="h-3.5 w-2/5" />
         <Skeleton className="h-3 w-1/4" />
       </div>
-      <Skeleton className="h-11 w-24 rounded-full" />
+      <Skeleton className="h-9 w-20 rounded-full" />
     </div>
   );
 }

@@ -76,7 +76,8 @@ export const fontSize = {
 };
 
 export const radius = {
-  xs: '6px', sm: '10px', md: '14px', lg: '20px', xl: '28px',
+  // controls 10, menus and inner panels 12, cards and lists 16, sheets 24
+  xs: '6px', sm: '10px', md: '12px', lg: '16px', xl: '24px',
 };
 
 export const shadow = {

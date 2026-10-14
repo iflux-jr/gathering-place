@@ -14,18 +14,18 @@ interface StateProps {
 
 function StateFrame({ title, description, action, icon, className, tone }: StateProps & { tone: string }) {
   return (
-    <div className={cn('grid justify-items-center gap-3 rounded-card px-6 py-10 text-center', tone, className)}>
-      {icon && <div aria-hidden="true" className="mb-1">{icon}</div>}
+    <div className={cn('grid justify-items-center gap-2 rounded-card px-6 py-12 text-center', tone, className)}>
+      {icon && <div aria-hidden="true" className="mb-2 grid h-12 w-12 place-items-center rounded-full bg-subtle text-ink [&_svg]:h-6 [&_svg]:w-6">{icon}</div>}
       <h3 className="font-heading text-h3 text-ink">{title}</h3>
       {description && <p className="max-w-[46ch] text-small text-muted">{description}</p>}
-      {action && <div className="mt-2">{action}</div>}
+      {action && <div className="mt-3">{action}</div>}
     </div>
   );
 }
 
 /** Nothing to show yet, with a next step where there is one */
 export function EmptyState(props: StateProps) {
-  return <StateFrame {...props} tone="border border-dashed border-line-strong bg-surface" />;
+  return <StateFrame {...props} tone="border border-line bg-surface shadow-sm" />;
 }
 
 interface ErrorStateProps extends Omit<StateProps, 'title'> {
@@ -60,7 +60,7 @@ export function SuccessState(props: StateProps) {
 /** Skeleton rows plus a screen-reader status message */
 export function LoadingList({ rows = 4, label = 'Loading' }: { rows?: number; label?: string }) {
   return (
-    <div className="grid gap-2" role="status" aria-live="polite">
+    <div className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-sm" role="status" aria-live="polite">
       <span className="sr-only">{label}…</span>
       {Array.from({ length: rows }, (_, i) => <SkeletonRow key={i} />)}
     </div>

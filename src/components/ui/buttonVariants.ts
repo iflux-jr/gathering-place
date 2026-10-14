@@ -20,9 +20,9 @@ export const buttonVariants = cva(
       },
       size: {
         sm:   'min-h-[36px] px-4 text-small',
-        md:   'min-h-touch px-5 text-[0.9375rem]',
+        md:   'min-h-touch px-5 text-[0.9375rem] lg:min-h-[40px]',
         lg:   'min-h-[52px] px-6 text-body',
-        icon: 'h-11 w-11 p-0',
+        icon: 'h-11 w-11 p-0 lg:h-10 lg:w-10',
       },
       block: { true: 'w-full' },
     },

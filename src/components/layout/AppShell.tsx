@@ -89,7 +89,7 @@ function RoleLine() {
 }
 
 const menuPanel = 'z-50 min-w-[220px] rounded-md border border-line bg-surface p-1.5 text-ink shadow-md data-[state=open]:animate-fade-in motion-reduce:animate-none';
-const menuItem = 'flex min-h-[40px] cursor-pointer select-none items-center gap-2.5 rounded-[10px] px-3 text-small font-medium outline-none data-[highlighted]:bg-subtle';
+const menuItem = 'flex min-h-[40px] cursor-pointer select-none items-center gap-2.5 rounded-control px-3 text-small font-medium outline-none data-[highlighted]:bg-subtle';
 
 /** Avatar button with the signed-in person, their role and sign out */
 function AccountMenu() {

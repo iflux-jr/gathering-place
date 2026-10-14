@@ -4,11 +4,12 @@ import { Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PageHeader } from '../components/layout/PageHeader';
 import {
-  Button, ClassChip, Dialog, EmptyState, ErrorState, Field, LoadingList, StatusPill, TabPanel, Tabs, Textarea, type Status,
+  Button, ClassChip, Dialog, EmptyState, ErrorState, Field, ListGroup, LoadingList, StatusPill, listRow, TabPanel, Tabs, Textarea, type Status,
 } from '../components/ui';
 import { approveDropRequestWithClass, rejectDropRequest, subscribeToAllDropRequests } from '../firebase/dropRequests';
 import { getStudentById } from '../firebase/students';
 import { subscribeToUsers } from '../firebase/users';
+import { cn } from '../lib/cn';
 import useAuthStore from '../store/authStore';
 import { useClassLookup } from '../store/classStore';
 import { formatDateShort } from '../utils/dateUtils';
@@ -65,9 +66,9 @@ export default function DropRequestsPage() {
     <EmptyState title={actions ? 'Nothing waiting' : 'No decisions yet'}
       description={actions ? 'Teachers ask to drop a student from their class roster.' : undefined} />
   ) : (
-    <ul className="grid gap-2">
+    <ListGroup>
       {rows.map(r => (
-        <li key={r.id} className="grid gap-3 rounded-md border border-line bg-surface p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <li key={r.id} className={cn('grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center', listRow)}>
           <div className="grid gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
               <p className="font-semibold">{r.studentName}</p>
@@ -82,8 +83,8 @@ export default function DropRequestsPage() {
             </p>
           </div>
           {actions && (
-            <div className="flex gap-2 sm:justify-end">
-              <Button variant="ghost" disabled={busy === r.id} onClick={() => { setNote(''); setDeclining(r); }}>
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+              <Button variant="outline" disabled={busy === r.id} onClick={() => { setNote(''); setDeclining(r); }}>
                 <X size={16} aria-hidden="true" /> Decline
               </Button>
               <Button variant="dark" loading={busy === r.id} onClick={() => approve(r)}>
@@ -93,7 +94,7 @@ export default function DropRequestsPage() {
           )}
         </li>
       ))}
-    </ul>
+    </ListGroup>
   );
 
   return (

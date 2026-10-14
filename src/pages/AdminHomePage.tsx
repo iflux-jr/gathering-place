@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Calculator, ClipboardList, GraduationCap, Inbox, LayoutGrid, Lock, UserMinus, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { PageHeader } from '../components/layout/PageHeader';
+import { PageHeader, SectionHeader } from '../components/layout/PageHeader';
 import { Button, Card, EmptyState, ErrorState, LoadingList, StatTile, buttonVariants } from '../components/ui';
 import { subscribeToAllClassConfigs } from '../firebase/classConfig';
 import { countStudentsByClass } from '../firebase/classes';
@@ -57,61 +57,61 @@ export default function AdminHomePage() {
     ? classes.filter(c => !configs[c.id]?.semester?.startDate || !teacherOf(c.id)).length
     : 0;
 
+  const todos = [
+    signups > 0 && { to: '/admin/registrations', icon: <Inbox size={18} />, tone: 'bg-mint', title: `${signups} ${signups === 1 ? 'sign-up' : 'sign-ups'} to review` },
+    drops > 0 && { to: '/admin/requests', icon: <UserMinus size={18} />, tone: 'bg-butter', title: `${drops} drop ${drops === 1 ? 'request' : 'requests'}` },
+    setupGaps > 0 && { to: '/admin/classes', icon: <LayoutGrid size={18} />, tone: 'bg-sky', title: `${setupGaps} ${setupGaps === 1 ? 'class needs' : 'classes need'} a semester or teacher` },
+  ].filter(Boolean) as TodoItem[];
+
   return (
     <>
       <PageHeader eyebrow={`${greeting()}, ${firstName(profile?.name)}`} title="Overview" />
 
       {!regOpen && (
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-card border border-bad-fg/20 bg-bad-bg p-4 text-bad-fg">
-          <p className="flex items-center gap-2 font-semibold"><Lock size={18} aria-hidden="true" /> Sign-ups are paused. The public form is closed.</p>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-card border border-bad-fg/20 bg-bad-bg px-4 py-3 text-bad-fg sm:px-5">
+          <p className="flex items-center gap-2 text-small font-semibold"><Lock size={16} aria-hidden="true" /> Sign-ups are paused. The public form is closed.</p>
           <Link to="/admin/settings" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Open sign-ups</Link>
         </div>
       )}
 
-      {(signups > 0 || drops > 0 || setupGaps > 0) && (
-        <section aria-labelledby="needs-heading" className="mb-8">
-          <h2 id="needs-heading" className="mb-3 font-heading text-h3">Waiting for you</h2>
-          <ul className="grid gap-3 sm:grid-cols-3">
-            {signups > 0 && <Todo to="/admin/registrations" icon={<Inbox size={20} />} tone="bg-mint" title={`${signups} ${signups === 1 ? 'sign-up' : 'sign-ups'} to review`} />}
-            {drops > 0 && <Todo to="/admin/requests" icon={<UserMinus size={20} />} tone="bg-warn-bg" title={`${drops} drop ${drops === 1 ? 'request' : 'requests'}`} />}
-            {setupGaps > 0 && <Todo to="/admin/classes" icon={<LayoutGrid size={20} />} tone="bg-surface" title={`${setupGaps} ${setupGaps === 1 ? 'class needs' : 'classes need'} a semester or teacher`} />}
-          </ul>
-        </section>
-      )}
-
-      <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile label="Students" value={students ?? '…'} icon={<Users size={20} />} />
-        <StatTile label="Attendance" sub="This semester" value={stats.overall === null ? '—' : `${stats.overall}%`} icon={<ClipboardList size={20} />} />
-        <StatTile label="Classes" value={classes.length} icon={<LayoutGrid size={20} />} />
-        <StatTile label="Teachers" value={teachers} icon={<GraduationCap size={20} />} />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatTile label="Students" value={students ?? '…'} icon={<Users size={16} />} />
+        <StatTile label="Attendance" sub="this semester" value={stats.overall === null ? '—' : `${stats.overall}%`} icon={<ClipboardList size={16} />} />
+        <StatTile label="Classes" value={classes.length} icon={<LayoutGrid size={16} />} />
+        <StatTile label="Teachers" value={teachers} icon={<GraduationCap size={16} />} />
       </div>
 
-      {error ? (
-        <ErrorState description="Check your connection and try again." onRetry={() => window.location.reload()} />
-      ) : !summaries || !configs ? (
-        <LoadingList rows={4} label="Loading attendance" />
-      ) : (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-          <Card as="section" aria-labelledby="week-heading" className="grid content-start gap-4">
-            <div>
-              <h2 id="week-heading" className="font-heading text-h3">This week’s registers</h2>
-              <p className="text-small text-muted">Which sessions each teacher has sent.</p>
-            </div>
-            <ul className="divide-y divide-line">
+      <div className="mt-4 grid items-start gap-4 lg:grid-cols-2">
+        <Card as="section" aria-labelledby="week-heading" className="grid gap-4">
+          <SectionHeader id="week-heading" title="This week’s registers" description="Which sessions each teacher has sent." />
+          {error ? (
+            <ErrorState description="Check your connection and try again." onRetry={() => window.location.reload()} />
+          ) : !summaries || !configs ? (
+            <LoadingList rows={4} label="Loading attendance" />
+          ) : (
+            <ul className="-my-1 divide-y divide-line">
               {classes.map(c => (
                 <RegisterRow key={c.id} id={c.id} label={c.label} colorKey={c.colorKey} config={configs[c.id]}
                   sent={stats.sent} rate={stats.byClass[c.id]?.rate ?? null} students={counts?.[c.id]} />
               ))}
             </ul>
-          </Card>
+          )}
+        </Card>
 
-          <Card as="section" aria-labelledby="trend-heading" className="grid content-start gap-4">
-            <div>
-              <h2 id="trend-heading" className="font-heading text-h3">Attendance by week</h2>
-              <p className="text-small text-muted">All classes together, not counting sessions with no class.</p>
-            </div>
-            {stats.byWeek.length === 0 ? (
-              <EmptyState title="No registers yet"
+        <div className="order-first grid gap-4 lg:order-none">
+          {todos.length > 0 && (
+            <Card as="section" aria-labelledby="needs-heading" className="grid gap-3">
+              <SectionHeader id="needs-heading" title="Waiting for you" />
+              <ul className="-mx-2 grid gap-1">
+                {todos.map(t => <Todo key={t.to} {...t} />)}
+              </ul>
+            </Card>
+          )}
+
+          <Card as="section" aria-labelledby="trend-heading" className="grid gap-4">
+            <SectionHeader id="trend-heading" title="Attendance by week" description="All classes together, not counting sessions with no class." />
+            {!summaries || !configs ? null : stats.byWeek.length === 0 ? (
+              <EmptyState className="border-0 bg-canvas py-8 shadow-none" title="No registers yet"
                 description="Totals appear here as teachers send registers. If attendance was taken before this update, recalculate once."
                 action={<RecalcButton />} />
             ) : (
@@ -122,21 +122,20 @@ export default function AdminHomePage() {
             )}
           </Card>
         </div>
-      )}
+      </div>
     </>
   );
 }
 
-function Todo({ to, icon, title, tone }: { to: string; icon: ReactNode; title: string; tone: string }) {
+interface TodoItem { to: string; icon: ReactNode; title: string; tone: string }
+
+function Todo({ to, icon, title, tone }: TodoItem) {
   return (
     <li>
-      <Link to={to} className={cn(
-        'flex min-h-touch items-center gap-3 rounded-md border border-line p-4 font-semibold transition-shadow',
-        'hover:shadow-sm focus-visible:outline-none focus-visible:shadow-focus', tone,
-      )}>
-        <span aria-hidden="true">{icon}</span>
-        <span className="flex-1">{title}</span>
-        <ArrowRight size={18} aria-hidden="true" />
+      <Link to={to} className="group flex min-h-touch items-center gap-3 rounded-md px-2 py-2 text-small font-semibold hover:bg-canvas focus-visible:outline-none focus-visible:shadow-focus">
+        <span aria-hidden="true" className={cn('grid h-9 w-9 flex-none place-items-center rounded-full', tone)}>{icon}</span>
+        <span className="min-w-0 flex-1">{title}</span>
+        <ArrowRight size={16} aria-hidden="true" className="flex-none text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-ink" />
       </Link>
     </li>
   );
@@ -177,16 +176,19 @@ function RegisterRow({ id, label, colorKey, config, sent, rate, students }: {
   }
 
   return (
-    <li className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-3 first:pt-0 last:pb-0">
-      <span className="h-8 w-2 rounded-full" style={{ backgroundColor: color.strong }} aria-hidden="true" />
-      <div className="min-w-0">
-        <p className="truncate font-semibold">{label}</p>
-        <div className="text-small">{detail}</div>
+    <li className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-3">
+      <span className="h-9 w-1.5 rounded-full" style={{ backgroundColor: color.strong }} aria-hidden="true" />
+      <div className="grid min-w-0 gap-1">
+        <p className="truncate font-semibold leading-tight">
+          {label}
+          {students !== undefined && <span className="font-normal text-muted"> · {students} {students === 1 ? 'student' : 'students'}</span>}
+        </p>
+        <div className="text-small leading-tight">{detail}</div>
       </div>
-      <div className="text-right">
-        <p className="font-heading text-h3 tabular-nums">{rate === null ? '—' : `${rate}%`}</p>
-        <p className="text-caption text-muted">{students === undefined ? '' : `${students} ${students === 1 ? 'student' : 'students'}`}</p>
-      </div>
+      <p className={cn('text-right text-body font-semibold tabular-nums', rate === null && 'text-muted')}
+        aria-label={rate === null ? 'No attendance yet' : `${rate}% attendance`}>
+        {rate === null ? '—' : `${rate}%`}
+      </p>
     </li>
   );
 }

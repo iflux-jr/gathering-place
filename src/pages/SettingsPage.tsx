@@ -2,9 +2,10 @@
 import { useEffect, useState } from 'react';
 import { Lock, Mail, Pencil, Unlock, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { PageHeader } from '../components/layout/PageHeader';
+import { PageHeader, SectionHeader } from '../components/layout/PageHeader';
+import { cn } from '../lib/cn';
 import {
-  Avatar, Button, Card, ClassChip, Dialog, EmptyState, Field, Input, LoadingList, RoleBadge, Select, StatusPill, Textarea,
+  Avatar, Button, Card, ClassChip, Dialog, EmptyState, Field, Input, ListGroup, LoadingList, RoleBadge, listRow, Select, StatusPill, Textarea,
 } from '../components/ui';
 import { assignTeacher } from '../firebase/classes';
 import { StaffError, createStaff, removeStaff, resendInvite, updateStaff } from '../firebase/staff';
@@ -51,7 +52,7 @@ function SignupsCard() {
 
   return (
     <Card as="section" aria-labelledby="signups-heading" className="grid gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="grid gap-1">
           <h2 id="signups-heading" className="flex items-center gap-2 font-heading text-h3">
             Student sign-ups {status && <StatusPill status={status.isOpen ? 'open' : 'paused'} size="sm" />}
@@ -94,20 +95,15 @@ function StaffSection() {
     .sort((a, b) => (a.role === b.role ? nameOf(a).localeCompare(nameOf(b)) : a.role === 'admin' ? -1 : 1));
 
   return (
-    <section aria-labelledby="staff-heading" className="grid gap-3">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 id="staff-heading" className="font-heading text-h3">Staff</h2>
-          <p className="text-small text-muted">Teachers mark attendance for their class. Admins can do everything.</p>
-        </div>
-        <Button onClick={() => setEditing('new')}><UserPlus size={16} aria-hidden="true" /> Add staff</Button>
-      </div>
+    <section aria-labelledby="staff-heading" className="grid gap-4">
+      <SectionHeader id="staff-heading" title="Staff" description="Teachers mark attendance for their class. Admins can do everything."
+        actions={<Button onClick={() => setEditing('new')}><UserPlus size={16} aria-hidden="true" /> Add staff</Button>} />
       {!users ? <LoadingList rows={3} label="Loading staff" /> : staff.length === 0 ? (
         <EmptyState title="No staff yet" />
       ) : (
-        <ul className="grid gap-2">
+        <ListGroup>
           {staff.map(u => (
-            <li key={u.id} className="flex flex-wrap items-center gap-3 rounded-md border border-line bg-surface p-3">
+            <li key={u.id} className={cn('flex flex-wrap items-center gap-x-3 gap-y-2', listRow)}>
               <Avatar name={nameOf(u)} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{nameOf(u)}{u.id === me && <span className="font-normal text-muted"> (you)</span>}</p>
@@ -117,12 +113,12 @@ function StaffSection() {
                 <RoleBadge role={u.role === 'admin' && u.assignedClass ? 'admin-teacher' : u.role} />
                 {u.assignedClass && <ClassChip classId={u.assignedClass} size="sm" label={lookup.label(u.assignedClass)} />}
               </div>
-              <Button size="sm" variant="ghost" aria-label={`Edit ${nameOf(u)}`} onClick={() => setEditing(u)}>
+              <Button size="sm" variant="outline" aria-label={`Edit ${nameOf(u)}`} onClick={() => setEditing(u)}>
                 <Pencil size={14} aria-hidden="true" /> Edit
               </Button>
             </li>
           ))}
-        </ul>
+        </ListGroup>
       )}
       <StaffDialog person={editing} users={users ?? []} onClose={() => setEditing(null)} />
     </section>

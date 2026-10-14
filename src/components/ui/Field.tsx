@@ -6,7 +6,7 @@ import {
 import { cn } from '../../lib/cn';
 
 const controlBase = [
-  'w-full min-h-touch rounded-[10px] border border-line-control bg-surface px-3.5',
+  'w-full min-h-touch rounded-control border border-line-control bg-surface px-3.5',
   'font-body text-body text-ink placeholder:text-muted',
   'transition-colors hover:border-ink',
   'focus-visible:outline-none focus-visible:border-accent-600 focus-visible:ring-4 focus-visible:ring-accent-100',

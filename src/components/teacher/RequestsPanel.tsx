@@ -1,7 +1,8 @@
 // Drop requests for this class, with a way to withdraw one that's still waiting.
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { Button, EmptyState, StatusPill, type Status } from '../ui';
+import { Button, EmptyState, ListGroup, StatusPill, listRow, type Status } from '../ui';
+import { cn } from '../../lib/cn';
 import { cancelDropRequest } from '../../firebase/dropRequests';
 import { formatDateShort } from '../../utils/dateUtils';
 import type { DropRequest } from '../../types/firestore';
@@ -26,9 +27,9 @@ export function RequestsPanel({ drops, uid }: { drops: DropRequest[]; uid: strin
   }
 
   return (
-    <ul className="grid gap-2">
+    <ListGroup>
       {drops.map(r => (
-        <li key={r.id} className="grid gap-2 rounded-md border border-line bg-surface p-4">
+        <li key={r.id} className={cn('grid gap-2', listRow)}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-semibold">{r.studentName}</p>
             <StatusPill status={r.status as Status} size="sm" />
@@ -45,6 +46,6 @@ export function RequestsPanel({ drops, uid }: { drops: DropRequest[]; uid: strin
           </div>
         </li>
       ))}
-    </ul>
+    </ListGroup>
   );
 }

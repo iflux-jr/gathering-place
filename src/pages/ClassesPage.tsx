@@ -2,11 +2,11 @@
 // semester, sessions per week and teacher.
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Archive, CalendarDays, Check, GraduationCap, Pencil, Plus, RotateCcw, Users } from 'lucide-react';
+import { Archive, CalendarDays, Check, GraduationCap, Pencil, Plus, Repeat, RotateCcw, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { PageHeader } from '../components/layout/PageHeader';
+import { PageHeader, SectionHeader } from '../components/layout/PageHeader';
 import {
-  Button, Dialog, EmptyState, ErrorState, Field, Input, LoadingList, Select, buttonVariants,
+  Button, Dialog, EmptyState, ErrorState, Field, Input, ListGroup, LoadingList, Select, buttonVariants,
 } from '../components/ui';
 import {
   ClassError, addClass, assignTeacher, classUsage, countStudentsByClass, deleteClass, setClassStatus, updateClass,
@@ -81,11 +81,11 @@ export default function ClassesPage() {
 
       {retired.length > 0 && (
         <section className="mt-10" aria-labelledby="retired-heading">
-          <h2 id="retired-heading" className="font-heading text-h3">Retired classes</h2>
-          <p className="mb-3 text-small text-muted">Their past attendance and archives are kept. Nobody can sign up for them.</p>
-          <ul className="grid gap-2">
+          <SectionHeader id="retired-heading" title="Retired classes" className="mb-4"
+            description="Their past attendance and archives are kept. Nobody can sign up for them." />
+          <ListGroup>
             {retired.map(c => <RetiredRow key={c.id} entry={c} uid={uid} />)}
-          </ul>
+          </ListGroup>
         </section>
       )}
 
@@ -106,27 +106,29 @@ function ClassCard({ entry, config, students, teachers, onEdit }: {
   const sessions = config?.sessionsPerWeek ?? 1;
   return (
     <article className="flex h-full flex-col rounded-card border border-line bg-surface p-2 shadow-sm">
-      <div className="grid flex-1 content-start gap-4 rounded-[14px] p-4" style={{ backgroundColor: color.surface }}>
-        <h2 className="font-heading text-h2">{entry.label}</h2>
-        <dl className="grid gap-2 text-small">
+      <div className="grid flex-1 content-start gap-4 rounded-md p-4" style={{ backgroundColor: color.surface }}>
+        <div>
+          <h2 className="font-heading text-h2">{entry.label}</h2>
+          <p className="text-small text-ink/60">{semester?.label || (semester?.startDate ? 'Semester' : 'No semester yet')}{status === 'ended' && ' · ended'}</p>
+        </div>
+        <dl className="grid gap-1.5 text-small">
           <Row icon={<GraduationCap size={16} />} term="Teacher">
-            {teachers.length ? teachers.map(nameOf).join(', ') : <span className="font-semibold">No teacher yet</span>}
+            {teachers.length ? teachers.map(nameOf).join(', ') : <span className="text-ink/60">No teacher yet</span>}
           </Row>
-          <Row icon={<CalendarDays size={16} />} term="Semester">
-            {semester?.startDate && semester.endDate ? (
-              <>
-                {semester.label ? `${semester.label}, ` : ''}{formatDateShort(semester.startDate)} to {formatDateShort(semester.endDate)}
-                {status === 'ended' && <span className="font-semibold"> (ended)</span>}
-                <br />{sessions} {sessions === 1 ? 'session' : 'sessions'} a week
-              </>
-            ) : <span className="font-semibold">Not set up</span>}
+          <Row icon={<CalendarDays size={16} />} term="Dates">
+            {semester?.startDate && semester.endDate
+              ? `${formatDateShort(semester.startDate)} – ${formatDateShort(semester.endDate)}`
+              : <span className="text-ink/60">Dates not set</span>}
+          </Row>
+          <Row icon={<Repeat size={16} />} term="Sessions">
+            {sessions} {sessions === 1 ? 'session' : 'sessions'} a week
           </Row>
         </dl>
       </div>
-      <div className="flex items-center justify-between gap-2 px-2 pb-1 pt-3">
-        <p className="flex items-center gap-2 text-small">
+      <div className="flex items-center justify-between gap-2 pb-0 pl-4 pr-0 pt-2">
+        <p className="flex items-center gap-2 text-small text-muted">
           <Users size={16} aria-hidden="true" />
-          <span className="font-semibold">{students === undefined ? '…' : `${students} ${students === 1 ? 'student' : 'students'}`}</span>
+          <span className="font-medium text-ink">{students === undefined ? '…' : `${students} ${students === 1 ? 'student' : 'students'}`}</span>
         </p>
         <Button size="sm" onClick={onEdit} aria-label={`Edit ${entry.label}`}>
           <Pencil size={14} aria-hidden="true" /> Edit
@@ -138,8 +140,8 @@ function ClassCard({ entry, config, students, teachers, onEdit }: {
 
 function Row({ icon, term, children }: { icon: ReactNode; term: string; children: ReactNode }) {
   return (
-    <div className="flex gap-2.5">
-      <span className="mt-0.5 flex-none" aria-hidden="true">{icon}</span>
+    <div className="flex items-start gap-2.5">
+      <span className="mt-0.5 flex-none text-ink/70" aria-hidden="true">{icon}</span>
       <div><dt className="sr-only">{term}</dt><dd>{children}</dd></div>
     </div>
   );
@@ -158,7 +160,7 @@ function RetiredRow({ entry, uid }: { entry: ClassEntry; uid: string }) {
     }
   }
   return (
-    <li className="flex items-center justify-between gap-3 rounded-md border border-line bg-surface py-2 pl-4 pr-2">
+    <li className="flex items-center justify-between gap-3 py-2.5 pl-4 pr-2.5 sm:pl-5">
       <span className="flex items-center gap-2.5 font-semibold">
         <span className="h-3 w-3 rounded-full" style={{ backgroundColor: getClassColor(entry.id, entry.colorKey).strong }} aria-hidden="true" />
         {entry.label}

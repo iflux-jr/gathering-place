@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarOff, Check, CloudOff, Search, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Button, Dialog, EmptyState, Input } from '../ui';
+import { Button, Dialog, EmptyState, Input, ListGroup } from '../ui';
 import { cn } from '../../lib/cn';
 import { clearDraft, loadDraft, saveDraft, type Marks } from '../../lib/draft';
 import { submitSessionAttendance } from '../../firebase/attendance';
@@ -132,36 +132,45 @@ export function RegisterPanel({ classId, uid, week, session, semester, students,
   const q = search.trim().toLowerCase();
   const shown = q ? students.filter(s => s.name.toLowerCase().includes(q) || s.phone?.includes(q)) : students;
 
-  return (
-    <div className="grid gap-4 pb-28 lg:pb-24">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-small" aria-live="polite">
-        <span><strong className="tabular-nums">{present}</strong> present</span>
-        <span><strong className="tabular-nums">{absent}</strong> absent</span>
-        <span className={cn(unmarked && 'font-semibold text-warn-fg')}><strong className="tabular-nums">{unmarked}</strong> not marked</span>
-        <span className="basis-full text-muted sm:basis-auto sm:ml-auto">
-          {unsent ? (
-            <span className="inline-flex items-center gap-1 font-semibold text-warn-fg"><CloudOff size={14} aria-hidden="true" /> Not sent yet</span>
-          ) : waiting ? (
-            <span className="inline-flex items-center gap-1 font-semibold text-warn-fg"><CloudOff size={14} aria-hidden="true" /> Saved on this phone, waiting for signal to send</span>
-          ) : submittedAt ? (
-            `Sent ${formatDateShort(submittedAt)}, ${formatTime(submittedAt)}`
-          ) : null}
-        </span>
-      </div>
+  const sendNote = unsent ? (
+    <span className="inline-flex items-center gap-1 text-warn-fg"><CloudOff size={12} aria-hidden="true" /> Not sent yet</span>
+  ) : waiting ? (
+    <span className="inline-flex items-center gap-1 text-warn-fg"><CloudOff size={12} aria-hidden="true" /> Saved on this phone, sends when online</span>
+  ) : submittedAt ? (
+    `Sent ${formatDateShort(submittedAt)}, ${formatTime(submittedAt)}`
+  ) : null;
 
-      <div className="flex flex-wrap gap-2">
-        {unmarked === students.length ? (
-          <Button size="sm" variant="outline" onClick={() => markRest(true)}>Everyone present</Button>
-        ) : unmarked > 0 ? (
-          <>
-            <Button size="sm" variant="outline" onClick={() => markRest(true)}>Mark the rest present</Button>
-            <Button size="sm" variant="outline" onClick={() => markRest(false)}>Mark the rest absent</Button>
-          </>
-        ) : null}
-        <Button size="sm" variant="ghost" className="ml-auto" onClick={() => setHolidayOpen(true)}>
+  return (
+    <div className="grid gap-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted sm:gap-x-4" aria-live="polite">
+          <span><strong className="font-semibold tabular-nums text-ink">{present}</strong> present</span>
+          <span><strong className="font-semibold tabular-nums text-ink">{absent}</strong> absent</span>
+          <span className={cn(unmarked > 0 && 'text-warn-fg')}><strong className="font-semibold tabular-nums">{unmarked}</strong> not marked</span>
+        </p>
+        <Button size="sm" variant="ghost" className="-mr-3 flex-none px-3" onClick={() => setHolidayOpen(true)}>
           <CalendarOff size={16} aria-hidden="true" /> No class?
         </Button>
       </div>
+
+      {unmarked > 0 && (
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          {unmarked === students.length ? (
+            <Button size="sm" variant="outline" className="col-span-2" onClick={() => markRest(true)}>
+              <Check size={16} aria-hidden="true" /> Everyone present
+            </Button>
+          ) : (
+            <>
+              <Button size="sm" variant="outline" onClick={() => markRest(true)}>
+                <Check size={16} aria-hidden="true" /> <span className="sm:hidden">Rest present</span><span className="hidden sm:inline">Mark the rest present</span>
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => markRest(false)}>
+                <X size={16} aria-hidden="true" /> <span className="sm:hidden">Rest absent</span><span className="hidden sm:inline">Mark the rest absent</span>
+              </Button>
+            </>
+          )}
+        </div>
+      )}
 
       {students.length > 10 && (
         <div className="relative">
@@ -171,11 +180,11 @@ export function RegisterPanel({ classId, uid, week, session, semester, students,
         </div>
       )}
 
-      <ul className="grid gap-2" aria-label={`Students, week ${week} session ${session}`}>
+      <ListGroup aria-label={`Students, week ${week} session ${session}`}>
         {shown.map(s => (
-          <li key={s.id} className="flex items-center gap-3 rounded-md border border-line bg-surface py-2 pl-4 pr-2">
+          <li key={s.id} className="flex items-center gap-3 py-2.5 pl-4 pr-2.5 sm:pl-5">
             <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold">{s.name}</p>
+              <p className="truncate font-medium">{s.name}</p>
               {s.id in marks && marks[s.id] !== saved[s.id] && <p className="text-caption text-warn-fg">Changed, not sent</p>}
             </div>
             <div role="group" aria-label={`${s.name}: attendance`} className="flex flex-none gap-1.5">
@@ -184,15 +193,18 @@ export function RegisterPanel({ classId, uid, week, session, semester, students,
             </div>
           </li>
         ))}
-        {shown.length === 0 && <li className="py-6 text-center text-small text-muted">No one matches “{search}”.</li>}
-      </ul>
+        {shown.length === 0 && <li className="px-4 py-6 text-center text-small text-muted">No one matches “{search}”.</li>}
+      </ListGroup>
 
-      <div className="fixed inset-x-0 bottom-[calc(72px+env(safe-area-inset-bottom))] z-20 px-4 lg:bottom-6 lg:left-64">
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 rounded-full border border-line bg-surface py-2 pl-5 pr-2 shadow-lg">
-          <p className="text-small font-semibold">
-            {unmarked ? `${students.length - unmarked} of ${students.length} marked` : 'Everyone marked'}
-          </p>
-          <Button size="sm" disabled={unmarked > 0 || (!unsent && (!!submittedAt || waiting))} loading={sending} onClick={submit}>
+      <div className="sticky bottom-[calc(84px+env(safe-area-inset-bottom))] z-20 lg:bottom-6">
+        <div className="flex items-center justify-between gap-3 rounded-full border border-line bg-surface/95 py-2 pl-5 pr-2 shadow-md backdrop-blur">
+          <div className="min-w-0">
+            <p className="text-small font-semibold leading-tight">
+              {unmarked ? `${students.length - unmarked} of ${students.length} marked` : 'Everyone marked'}
+            </p>
+            {sendNote && <p className="truncate text-caption text-muted">{sendNote}</p>}
+          </div>
+          <Button size="sm" className="flex-none" disabled={unmarked > 0 || (!unsent && (!!submittedAt || waiting))} loading={sending} onClick={submit}>
             {waiting && !unsent ? 'Waiting' : submittedAt && !unsent ? 'Sent' : submittedAt ? 'Send changes' : 'Send'}
           </Button>
         </div>
@@ -222,12 +234,12 @@ function MarkButton({ kind, pressed, onClick }: { kind: 'present' | 'absent'; pr
       aria-pressed={pressed}
       onClick={onClick}
       className={cn(
-        'inline-flex min-h-touch min-w-[88px] items-center justify-center gap-1.5 rounded-full border-1.5 px-3',
+        'inline-flex min-h-[40px] min-w-[88px] items-center justify-center gap-1.5 rounded-full border px-3 sm:min-w-[100px]',
         'font-body text-small font-semibold transition-colors duration-100',
         'focus-visible:outline-none focus-visible:shadow-focus',
         pressed
-          ? kind === 'present' ? 'border-ok-fg bg-ok-bg text-ok-fg' : 'border-bad-fg bg-bad-bg text-bad-fg'
-          : 'border-line-strong bg-surface text-muted hover:border-ink hover:text-ink',
+          ? kind === 'present' ? 'border-ok-fg/40 bg-ok-bg text-ok-fg' : 'border-bad-fg/40 bg-bad-bg text-bad-fg'
+          : 'border-line-strong bg-surface text-muted hover:border-ink/40 hover:text-ink',
       )}
     >
       <Icon size={16} strokeWidth={pressed ? 3 : 2} aria-hidden="true" />

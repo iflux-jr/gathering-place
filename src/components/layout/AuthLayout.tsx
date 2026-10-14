@@ -31,7 +31,7 @@ export function AuthLayout({ title, description, children }: { title: string; de
         <Link to="/" className="self-start rounded-md focus-visible:outline-none focus-visible:shadow-focus lg:hidden" aria-label="The Gathering Place, home">
           <Logo height={30} />
         </Link>
-        <div className="mx-auto my-auto grid w-full max-w-sm gap-6 py-10">
+        <div className="mx-auto mt-10 grid w-full max-w-sm gap-6 py-6 sm:my-auto sm:py-10">
           <div className="grid gap-2">
             <h1 className="font-heading text-h1 md:text-h1-lg">{title}</h1>
             {description && <p className="text-muted">{description}</p>}

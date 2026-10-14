@@ -6,7 +6,7 @@ import { Download, Phone, Search, UserMinus, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PageHeader } from '../components/layout/PageHeader';
 import {
-  Avatar, Button, ClassChip, Dialog, EmptyState, ErrorState, FilterChip, Input, LoadingList, ProgressBar, StatusPill, buttonVariants,
+  Avatar, Button, ClassChip, Dialog, EmptyState, ErrorState, FilterChip, Input, ListGroup, LoadingList, ProgressBar, StatusPill, buttonVariants,
 } from '../components/ui';
 import { getStudentAttendance } from '../firebase/attendance';
 import { adminDirectDrop } from '../firebase/dropRequests';
@@ -55,7 +55,7 @@ export default function StudentsPage() {
         </>}
       />
 
-      <div className="mb-4 grid gap-3">
+      <div className="mb-5 grid gap-3">
         <div className="relative">
           <Search size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true" />
           <Input type="search" aria-label="Search by name or phone" placeholder="Search by name or phone" className="pl-10"
@@ -78,18 +78,21 @@ export default function StudentsPage() {
           description={students.length ? 'Try another name, number or class.' : 'Accepted sign-ups and students you add appear here.'} />
       ) : (
         <>
-          <p className="mb-2 text-small text-muted" aria-live="polite">{shown.length} shown</p>
-          <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-sm">
+          <p className="sr-only" aria-live="polite">{shown.length} shown</p>
+          {shown.length !== students.length && (
+            <p className="mb-3 text-small text-muted" aria-hidden="true">Showing {shown.length} of {students.length}</p>
+          )}
+          <ListGroup>
             {shown.map(s => (
               <li key={s.id}>
                 <button type="button" onClick={() => setOpen(s)}
-                  className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_#1F64B0] sm:grid-cols-[auto_minmax(0,1fr)_auto]">
+                  className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 px-4 py-3 text-left sm:px-5 transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_#1F64B0] sm:grid-cols-[auto_minmax(0,1fr)_auto]">
                   <Avatar name={s.name} />
                   <span className="min-w-0">
                     <span className="block truncate font-semibold">{s.name}</span>
                     <span className="block text-small text-muted">{s.phone}</span>
                   </span>
-                  <span className="col-span-2 flex flex-wrap gap-1.5 sm:col-span-1 sm:justify-end">
+                  <span className="col-start-2 flex flex-wrap gap-1.5 sm:col-start-auto sm:justify-end">
                     {(s.classes ?? []).length
                       ? s.classes.map(c => <ClassChip key={c} classId={c} size="sm" />)
                       : <StatusPill status="unmarked" size="sm">No class</StatusPill>}
@@ -97,7 +100,7 @@ export default function StudentsPage() {
                 </button>
               </li>
             ))}
-          </ul>
+          </ListGroup>
         </>
       )}
 
