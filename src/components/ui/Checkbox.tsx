@@ -28,8 +28,8 @@ export function Checkbox({
         required={required}
         aria-describedby={description ? `${id}-desc` : undefined}
         className={cn(
-          'mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-[7px] border-1.5 border-ink bg-surface',
-          'data-[state=checked]:bg-ink data-[state=indeterminate]:bg-ink text-white',
+          'mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-[7px] border-1.5 border-line-control bg-surface hover:border-ink',
+          'data-[state=checked]:border-ink data-[state=checked]:bg-ink data-[state=indeterminate]:border-ink data-[state=indeterminate]:bg-ink text-white',
           'focus-visible:outline-none focus-visible:shadow-focus disabled:opacity-50',
           // 44px touch target without changing the visible size
           'relative before:absolute before:-inset-2.5 before:content-[""]',

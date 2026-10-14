@@ -79,10 +79,8 @@ export default function AttendancePage() {
         <EmptyState title={status === 'not_started' ? 'This semester hasn’t started' : 'This class isn’t set up yet'}
           description="Set its semester dates on the Classes page." />
       ) : (
-        <Card className="grid gap-4">
-          <div className="rounded-md border-1.5 border-ink p-2">
-            <WeekPicker week={week || lastWeek} lastWeek={lastWeek} totalWeeks={total} currentWeek={current} semester={semester!} onChange={setWeek} />
-          </div>
+        <Card className="grid gap-5">
+          <WeekPicker week={week || lastWeek} lastWeek={lastWeek} totalWeeks={total} currentWeek={current} semester={semester!} onChange={setWeek} />
           {!records ? (
             <LoadingList rows={5} label="Loading the register" />
           ) : rows.length === 0 ? (
@@ -92,10 +90,10 @@ export default function AttendancePage() {
               <table className="w-full min-w-[320px] border-collapse text-small">
                 <caption className="sr-only">{lookup.label(classId)}, week {week}</caption>
                 <thead>
-                  <tr className="border-b-1.5 border-ink text-left">
-                    <th scope="col" className="py-2 pr-3 font-semibold">Student</th>
+                  <tr className="border-b border-line text-left text-caption text-muted">
+                    <th scope="col" className="py-2.5 pr-3 font-medium">Student</th>
                     {sessionNums.map(n => (
-                      <th key={n} scope="col" className="px-2 py-2 text-center font-semibold">
+                      <th key={n} scope="col" className="w-24 px-2 py-2.5 text-center font-medium sm:w-28">
                         {sessions > 1 ? `Session ${n}` : 'Marked'}
                         {isHolidaySession(config, week, n) && <span className="block text-caption font-normal text-info-fg">No class</span>}
                       </th>
@@ -105,17 +103,17 @@ export default function AttendancePage() {
                 <tbody>
                   {rows.map(row => (
                     <tr key={row.id} className="border-b border-line last:border-0">
-                      <th scope="row" className="py-2 pr-3 text-left font-normal">{row.name}</th>
-                      {sessionNums.map(n => <td key={n} className="px-2 py-2 text-center"><Mark record={mark(row.id, n)} off={isHolidaySession(config, week, n)} /></td>)}
+                      <th scope="row" className="py-2.5 pr-3 text-left font-medium">{row.name}</th>
+                      {sessionNums.map(n => <td key={n} className="px-2 py-2.5 text-center"><Mark record={mark(row.id, n)} off={isHolidaySession(config, week, n)} /></td>)}
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr className="border-t-1.5 border-ink">
-                    <th scope="row" className="py-2 pr-3 text-left font-semibold">Present</th>
+                  <tr className="border-t border-line-strong">
+                    <th scope="row" className="pb-0 pt-3 pr-3 text-left font-semibold">Present</th>
                     {sessionNums.map(n => {
                       const rs = (records ?? []).filter(r => r.sessionNumber === n && r.present !== null);
-                      return <td key={n} className="px-2 py-2 text-center font-semibold tabular-nums">{rs.length ? `${rs.filter(r => r.present).length} of ${rs.length}` : '—'}</td>;
+                      return <td key={n} className="px-2 pb-0 pt-3 text-center font-semibold tabular-nums">{rs.length ? `${rs.filter(r => r.present).length} of ${rs.length}` : '—'}</td>;
                     })}
                   </tr>
                 </tfoot>
@@ -134,10 +132,10 @@ function Mark({ record, off }: { record?: AttendanceRecord; off: boolean }) {
   const label = p === true ? 'Present' : p === false ? 'Absent' : 'Not marked';
   const Icon = p === true ? Check : p === false ? X : Minus;
   return (
-    <span className={cn('inline-grid h-8 w-8 place-items-center rounded-full',
+    <span className={cn('inline-grid h-7 w-7 place-items-center rounded-full',
       p === true ? 'bg-ok-bg text-ok-fg' : p === false ? 'bg-bad-bg text-bad-fg' : 'bg-neutral-bg text-neutral-fg')}
       title={label}>
-      <Icon size={16} strokeWidth={2.5} aria-hidden="true" />
+      <Icon size={14} strokeWidth={2.5} aria-hidden="true" />
       <span className="sr-only">{label}</span>
     </span>
   );

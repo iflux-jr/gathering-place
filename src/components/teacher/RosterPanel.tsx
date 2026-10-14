@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Phone, UserMinus } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Button, ClassChip, Dialog, EmptyState, ErrorState, Field, LoadingList, ProgressBar, StatusPill, Textarea } from '../ui';
+import { cn } from '../../lib/cn';
+import { Button, ClassChip, Dialog, EmptyState, ErrorState, Field, ListGroup, LoadingList, ProgressBar, StatusPill, Textarea, listRow } from '../ui';
 import { getClassAttendance } from '../../firebase/attendance';
 import { createDropRequest } from '../../firebase/dropRequests';
 import { isHolidaySession } from '../../firebase/classConfig';
@@ -58,14 +59,14 @@ export function RosterPanel({ classId, uid, config, students, drops, canRequestD
   return (
     <>
       <p className="mb-3 text-small text-muted">{students.length} {students.length === 1 ? 'student' : 'students'}. Rates count sessions marked so far, not counting days with no class.</p>
-      <ul className="grid gap-2">
+      <ListGroup>
         {students.map(s => {
           const rate = rates.get(s.id);
           const pct = rate && rate.counted ? Math.round((rate.present / rate.counted) * 100) : null;
           const other = (s.classes ?? []).filter(c => c !== classId);
           const pending = pendingFor(s.id);
           return (
-            <li key={s.id} className="grid gap-3 rounded-md border-1.5 border-line bg-surface p-4 sm:grid-cols-[minmax(0,1fr)_200px_auto] sm:items-center">
+            <li key={s.id} className={cn('grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px_128px] sm:items-center sm:gap-6', listRow)}>
               <div className="min-w-0">
                 <p className="truncate font-semibold">{s.name}</p>
                 <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted">
@@ -89,7 +90,7 @@ export function RosterPanel({ classId, uid, config, students, drops, canRequestD
                 {pending ? (
                   <StatusPill status="pending" size="sm">Drop requested</StatusPill>
                 ) : !canRequestDrop ? null : (
-                  <Button size="sm" variant="ghost" onClick={() => setDropping(s)}>
+                  <Button size="sm" variant="outline" onClick={() => setDropping(s)}>
                     <UserMinus size={16} aria-hidden="true" /> Ask to drop
                   </Button>
                 )}
@@ -97,7 +98,7 @@ export function RosterPanel({ classId, uid, config, students, drops, canRequestD
             </li>
           );
         })}
-      </ul>
+      </ListGroup>
       <DropDialog student={dropping} classId={classId} uid={uid} onClose={() => setDropping(null)} />
     </>
   );

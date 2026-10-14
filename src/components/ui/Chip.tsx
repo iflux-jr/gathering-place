@@ -4,7 +4,7 @@ import { getClassColor } from '../../theme/classes';
 import useClassStore from '../../store/classStore';
 import { colors } from '../../theme/tokens.js';
 
-const chipBase = 'inline-flex items-center gap-1.5 rounded-full border-1.5 border-ink font-body font-semibold whitespace-nowrap';
+const chipBase = 'inline-flex items-center gap-1.5 rounded-full border border-line-strong font-body font-medium whitespace-nowrap';
 const chipSizes = { sm: 'px-2.5 py-1 text-caption', md: 'px-3 py-1.5 text-small' };
 
 interface ChipProps extends HTMLAttributes<HTMLSpanElement> {
@@ -36,7 +36,7 @@ export function FilterChip({ selected, className, type = 'button', ...props }: F
       className={cn(
         chipBase, 'min-h-[36px] px-3.5 text-small transition-colors',
         'focus-visible:outline-none focus-visible:shadow-focus',
-        selected ? 'bg-ink text-white' : 'bg-surface text-ink hover:bg-canvas',
+        selected ? 'border-ink bg-ink text-white' : 'bg-surface text-ink hover:border-ink/40',
         className,
       )}
       {...props}
@@ -57,7 +57,7 @@ export function ClassChip({ classId, label, colorKey, size = 'md', className }: 
   const entry = useClassStore(s => s.classes.find(c => c.id === classId));
   const color = getClassColor(classId, colorKey ?? entry?.colorKey);
   const name = label ?? entry?.label ?? classId;
-  return <Chip size={size} tone={color.surface} className={cn('text-ink', className)}>{name}</Chip>;
+  return <Chip size={size} tone={color.surface} className={cn('border-transparent text-ink', className)}>{name}</Chip>;
 }
 
 export type Status =
@@ -93,7 +93,7 @@ interface StatusPillProps {
 export function StatusPill({ status, children, size = 'md', className }: StatusPillProps) {
   const s = STATUS[status];
   return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-full font-body font-semibold whitespace-nowrap', chipSizes[size], s.cls, className)}>
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full font-body font-medium whitespace-nowrap', chipSizes[size], s.cls, className)}>
       <span className="h-2 w-2 rounded-full bg-current" aria-hidden="true" />
       {children ?? s.label}
     </span>
@@ -108,13 +108,13 @@ interface RoleBadgeProps {
 export function RoleBadge({ role, className }: RoleBadgeProps) {
   if (role === 'admin-teacher') {
     return (
-      <Chip size="sm" className={cn('bg-[linear-gradient(90deg,theme(colors.lilac)_50%,theme(colors.lime.DEFAULT)_50%)]', className)}>
+      <Chip size="sm" className={cn('border-transparent bg-[linear-gradient(90deg,theme(colors.lilac)_50%,theme(colors.mint)_50%)]', className)}>
         Admin · Teacher
       </Chip>
     );
   }
   return (
-    <Chip size="sm" tone={role === 'admin' ? colors.lilac : colors.lime.DEFAULT} className={className}>
+    <Chip size="sm" tone={role === 'admin' ? colors.lilac : colors.mint} className={cn('border-transparent', className)}>
       {role === 'admin' ? 'Admin' : 'Teacher'}
     </Chip>
   );

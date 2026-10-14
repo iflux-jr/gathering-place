@@ -1,8 +1,9 @@
-// The signed-in app frame, after the references: a dark icon sidebar on desktop and
-// a bottom tab bar on phones, around a warm canvas.
+// The signed-in app frame: a dark top bar with the main pages on desktop, and the same
+// bar plus a bottom tab bar on phones, around a light grey canvas.
 import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, MoreHorizontal } from 'lucide-react';
+import { ChevronDown, LogOut, MoreHorizontal } from 'lucide-react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import toast from 'react-hot-toast';
 import { Logo } from '../brand/Logo';
 import { Avatar, Dialog, LoadingList, RoleBadge } from '../ui';
@@ -49,7 +50,7 @@ function useBadges(isAdmin: boolean): Badges {
 function BadgeCount({ count, className }: { count?: number; className?: string }) {
   if (!count) return null;
   return (
-    <span className={cn('rounded-full bg-flame-500 px-1.5 py-0.5 text-caption font-bold leading-none text-ink tabular-nums', className)}>
+    <span className={cn('rounded-full bg-accent-500 px-1.5 py-0.5 text-caption font-semibold leading-none text-ink tabular-nums', className)}>
       {count}<span className="sr-only"> waiting</span>
     </span>
   );
@@ -68,67 +69,112 @@ function useSignOut() {
   };
 }
 
-function RoleLine() {
+function useRole() {
   const profile = useAuthStore(s => s.profile);
   const role = profile?.role === 'admin' ? (profile?.assignedClass ? 'admin-teacher' : 'admin') : 'teacher';
+  return { name: profile?.name || 'Signed in', role } as const;
+}
+
+function RoleLine() {
+  const { name, role } = useRole();
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <Avatar name={profile?.name || 'User'} size="sm" />
+      <Avatar name={name} size="sm" />
       <div className="min-w-0">
-        <p className="truncate text-small font-bold">{profile?.name || 'Signed in'}</p>
+        <p className="truncate text-small font-semibold">{name}</p>
         <RoleBadge role={role} className="mt-0.5" />
       </div>
     </div>
   );
 }
 
-function Sidebar({ items, badges }: { items: NavItem[]; badges: Badges }) {
+const menuPanel = 'z-50 min-w-[220px] rounded-md border border-line bg-surface p-1.5 text-ink shadow-md data-[state=open]:animate-fade-in motion-reduce:animate-none';
+const menuItem = 'flex min-h-[40px] cursor-pointer select-none items-center gap-2.5 rounded-control px-3 text-small font-medium outline-none data-[highlighted]:bg-subtle';
+
+/** Avatar button with the signed-in person, their role and sign out */
+function AccountMenu() {
+  const { name } = useRole();
   const signOut = useSignOut();
   return (
-    <aside className="sticky top-0 hidden h-dvh w-64 flex-none flex-col gap-6 bg-ink px-4 py-6 text-white lg:flex print:hidden">
-      <NavLink to="/" className="rounded-md px-2 focus-visible:outline-none focus-visible:shadow-focus" aria-label="The Gathering Place, home">
-        <Logo on="dark" height={30} />
-      </NavLink>
-      <nav aria-label="Main" className="flex-1 overflow-y-auto">
-        <ul className="grid gap-1">
-          {items.map(item => (
-            <li key={item.to}>
-              <NavLink
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) => cn(
-                  'flex min-h-touch items-center gap-3 rounded-md px-3 text-small font-semibold transition-colors',
-                  'focus-visible:outline-none focus-visible:shadow-focus',
-                  isActive ? 'bg-lime text-ink' : 'text-[#D9D5CB] hover:bg-ink-2 hover:text-white',
-                )}
-              >
-                <item.icon className="h-5 w-5 flex-none" aria-hidden="true" />
-                <span className="flex-1">{item.label}</span>
-                <BadgeCount count={item.badge && badges[item.badge]} />
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      <div className="grid gap-3 rounded-card bg-ink-2 p-3">
-        <RoleLine />
-        <button
-          type="button" onClick={signOut}
-          className="flex min-h-touch items-center gap-2 rounded-md px-2 text-small font-semibold text-[#D9D5CB] hover:bg-ink hover:text-white focus-visible:outline-none focus-visible:shadow-focus"
-        >
-          <LogOut className="h-4 w-4" aria-hidden="true" /> Sign out
-        </button>
-      </div>
-    </aside>
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger
+        className="flex min-h-touch items-center gap-2 rounded-full py-1 pl-1 pr-2 text-white hover:bg-ink-3 focus-visible:outline-none focus-visible:shadow-focus"
+        aria-label={`Account: ${name}`}
+      >
+        <Avatar name={name} size="sm" />
+        <span className="hidden max-w-[12ch] truncate text-small font-medium xl:block">{name}</span>
+        <ChevronDown className="h-4 w-4 text-onDark-muted" aria-hidden="true" />
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content align="end" sideOffset={8} className={menuPanel}>
+          <div className="px-3 py-2.5"><RoleLine /></div>
+          <DropdownMenu.Separator className="my-1 h-px bg-line" />
+          <DropdownMenu.Item className={menuItem} onSelect={signOut}>
+            <LogOut className="h-4 w-4" aria-hidden="true" /> Sign out
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 }
 
-function TopBar() {
+/** Pages that sit under "More" in the desktop bar, to keep it to one line */
+const DESKTOP_MORE = ['/admin/archive', '/admin/settings', '/register', '/invite'];
+
+function TopBar({ items, badges }: { items: NavItem[]; badges: Badges }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isAdminNav = items.some(i => i.to === '/admin');
+  const more = isAdminNav ? items.filter(i => DESKTOP_MORE.includes(i.to)) : [];
+  const main = items.filter(i => !more.includes(i));
+  const isActive = (i: NavItem) => (i.end ? location.pathname === i.to : location.pathname.startsWith(i.to));
+  const moreActive = more.some(isActive);
+
+  const linkClass = (active: boolean) => cn(
+    'relative flex h-16 items-center gap-2 whitespace-nowrap px-2.5 text-small font-medium transition-colors xl:px-3',
+    'focus-visible:outline-none focus-visible:shadow-focus',
+    "after:absolute after:inset-x-2.5 after:bottom-0 after:h-0.5 after:rounded-full after:content-[''] xl:after:inset-x-3",
+    active ? 'text-white after:bg-white' : 'text-onDark-muted hover:text-white after:bg-transparent',
+  );
+
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 rounded-b-frame bg-ink px-4 pb-3 pt-[calc(env(safe-area-inset-top)+12px)] text-white lg:hidden print:hidden">
-      <NavLink to="/" aria-label="The Gathering Place, home" className="rounded-md focus-visible:outline-none focus-visible:shadow-focus">
-        <Logo on="dark" height={28} />
-      </NavLink>
+    <header className="sticky top-0 z-30 bg-ink pt-[env(safe-area-inset-top)] text-white print:hidden">
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-6 lg:h-16 lg:gap-6 lg:px-8">
+        <NavLink to="/" aria-label="The Gathering Place, home" className="flex-none rounded-md focus-visible:outline-none focus-visible:shadow-focus">
+          <Logo on="dark" height={26} />
+        </NavLink>
+        <nav aria-label="Main" className="hidden min-w-0 flex-1 lg:block">
+          <ul className="flex items-center">
+            {main.map(item => (
+              <li key={item.to}>
+                <NavLink to={item.to} end={item.end} className={({ isActive: a }) => linkClass(a)}>
+                  {item.label === 'Drop requests' ? 'Requests' : item.label}
+                  <BadgeCount count={item.badge && badges[item.badge]} />
+                </NavLink>
+              </li>
+            ))}
+            {more.length > 0 && (
+              <li>
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger className={linkClass(moreActive)}>
+                    More <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content align="start" sideOffset={4} className={menuPanel}>
+                      {more.map(item => (
+                        <DropdownMenu.Item key={item.to} className={cn(menuItem, isActive(item) && 'bg-subtle')} onSelect={() => navigate(item.to)}>
+                          <item.icon className="h-4 w-4 text-muted" aria-hidden="true" /> {item.label}
+                        </DropdownMenu.Item>
+                      ))}
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+              </li>
+            )}
+          </ul>
+        </nav>
+        <div className="ml-auto flex-none"><AccountMenu /></div>
+      </div>
     </header>
   );
 }
@@ -146,15 +192,15 @@ function BottomBar({ items, badges }: { items: NavItem[]; badges: Badges }) {
   const moreBadge = rest.reduce((n, i) => n + ((i.badge && badges[i.badge]) || 0), 0);
 
   const tabClass = (active: boolean) => cn(
-    'relative flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-md text-[0.6875rem] font-bold',
+    'relative flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-md text-[0.6875rem] font-semibold',
     'focus-visible:outline-none focus-visible:shadow-focus',
-    active ? 'text-ink' : 'text-[#D9D5CB]',
+    active ? 'text-ink' : 'text-muted',
   );
-  const pill = (active: boolean) => cn('grid h-8 w-14 place-items-center rounded-full transition-colors', active && 'bg-lime');
+  const pill = (active: boolean) => cn('grid h-8 w-14 place-items-center rounded-full transition-colors', active && 'bg-ink');
 
   return (
     <>
-      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 rounded-t-frame bg-ink px-2 pb-[calc(env(safe-area-inset-bottom)+6px)] pt-1.5 lg:hidden print:hidden">
+      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 px-2 pb-[calc(env(safe-area-inset-bottom)+6px)] pt-1.5 backdrop-blur lg:hidden print:hidden">
         <ul className="flex">
           {primary.map(item => (
             <li key={item.to} className="flex flex-1">
@@ -162,9 +208,9 @@ function BottomBar({ items, badges }: { items: NavItem[]; badges: Badges }) {
                 {({ isActive }) => (
                   <>
                     <span className={pill(isActive)}>
-                      <item.icon className={cn('h-5 w-5', isActive ? 'text-ink' : 'text-white')} aria-hidden="true" />
+                      <item.icon className={cn('h-5 w-5', isActive ? 'text-white' : 'text-muted')} aria-hidden="true" />
                     </span>
-                    <span className={isActive ? 'text-white' : undefined}>{shortLabel(item.label)}</span>
+                    <span>{shortLabel(item.label)}</span>
                     <BadgeCount count={item.badge && badges[item.badge]} className="absolute right-[18%] top-0" />
                   </>
                 )}
@@ -174,9 +220,9 @@ function BottomBar({ items, badges }: { items: NavItem[]; badges: Badges }) {
           <li className="flex flex-1">
             <button type="button" className={tabClass(moreActive)} onClick={() => setMoreOpen(true)} aria-haspopup="dialog">
               <span className={pill(moreActive)}>
-                <MoreHorizontal className={cn('h-5 w-5', moreActive ? 'text-ink' : 'text-white')} aria-hidden="true" />
+                <MoreHorizontal className={cn('h-5 w-5', moreActive ? 'text-white' : 'text-muted')} aria-hidden="true" />
               </span>
-              <span className={moreActive ? 'text-white' : undefined}>More</span>
+              <span>More</span>
               <BadgeCount count={moreBadge} className="absolute right-[18%] top-0" />
             </button>
           </li>
@@ -191,9 +237,9 @@ function BottomBar({ items, badges }: { items: NavItem[]; badges: Badges }) {
                 <NavLink
                   to={item.to} end={item.end}
                   className={({ isActive }) => cn(
-                    'flex min-h-[52px] items-center gap-3 rounded-md border-1.5 px-4 text-body font-semibold',
+                    'flex min-h-[52px] items-center gap-3 rounded-md border px-4 text-body font-medium',
                     'focus-visible:outline-none focus-visible:shadow-focus',
-                    isActive ? 'border-ink bg-lime' : 'border-line hover:border-ink',
+                    isActive ? 'border-ink bg-ink text-white' : 'border-line hover:border-ink/40',
                   )}
                 >
                   <item.icon className="h-5 w-5" aria-hidden="true" />
@@ -205,7 +251,7 @@ function BottomBar({ items, badges }: { items: NavItem[]; badges: Badges }) {
             <li>
               <button
                 type="button" onClick={signOut}
-                className="flex min-h-[52px] w-full items-center gap-3 rounded-md border-1.5 border-line px-4 text-body font-semibold hover:border-ink focus-visible:outline-none focus-visible:shadow-focus"
+                className="flex min-h-[52px] w-full items-center gap-3 rounded-md border border-line px-4 text-body font-medium hover:border-ink/40 focus-visible:outline-none focus-visible:shadow-focus"
               >
                 <LogOut className="h-5 w-5" aria-hidden="true" /> Sign out
               </button>
@@ -229,21 +275,18 @@ export default function AppShell({ children }: { children?: ReactNode }) {
   const { items, isAdmin } = useNavItems();
   const badges = useBadges(isAdmin);
   return (
-    <div className="flex min-h-dvh bg-canvas font-body text-ink">
+    <div className="flex min-h-dvh flex-col bg-canvas font-body text-ink">
       <a href="#main" className="sr-only z-50 rounded-full bg-ink px-4 py-2 text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
         Skip to content
       </a>
-      <Sidebar items={items} badges={badges} />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar />
-        <main id="main" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-6 focus:outline-none sm:px-6 lg:px-8 lg:pb-12 lg:pt-8">
-          {children ?? (
-            <Suspense fallback={<LoadingList rows={4} />}>
-              <Outlet />
-            </Suspense>
-          )}
-        </main>
-      </div>
+      <TopBar items={items} badges={badges} />
+      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-6 focus:outline-none sm:px-6 lg:px-8 lg:pb-12 lg:pt-10">
+        {children ?? (
+          <Suspense fallback={<LoadingList rows={4} />}>
+            <Outlet />
+          </Suspense>
+        )}
+      </main>
       <BottomBar items={items} badges={badges} />
     </div>
   );

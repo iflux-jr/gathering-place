@@ -147,7 +147,7 @@ Student lists, a class's semester attendance and archived semesters can be expor
 | QR codes | qrcode.react | Sign-up link QR codes |
 | CSV export | PapaParse | Client-side CSV serialisation |
 | Notifications | react-hot-toast | Non-blocking toast messages |
-| Fonts | Outfit + Plus Jakarta Sans | Headings and body text via Google Fonts |
+| Fonts | DM Sans | Headings and body text via Google Fonts |
 | Language | TypeScript (gradual) | New code is TypeScript; older `.js` files convert as they change |
 
 ---

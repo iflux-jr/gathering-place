@@ -2,10 +2,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Archive, ChevronDown, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { PageHeader } from '../components/layout/PageHeader';
-import {
-  Button, Card, ClassChip, Dialog, EmptyState, ErrorState, Field, Input, LoadingList, StatTile,
-} from '../components/ui';
+import { PageHeader, SectionHeader } from '../components/layout/PageHeader';
+import { Button, Card, ClassChip, Dialog, EmptyState, ErrorState, Field, Input, ListGroup, LoadingList, StatTile } from '../components/ui';
 import { archiveClassSemester, getArchiveIndex, getArchivedAttendance, getArchivedStudents } from '../firebase/archive';
 import { subscribeToAllClassConfigs } from '../firebase/classConfig';
 import { getActiveSemester, recordNewSemester } from '../firebase/systemSettings';
@@ -44,39 +42,39 @@ export default function ArchivePage() {
       <PageHeader title="Archive" description="At the end of a semester, archive each class to clear its register for the next one. Archived students and attendance stay readable here." />
 
       <section aria-labelledby="close-heading" className="mb-10">
-        <h2 id="close-heading" className="mb-3 font-heading text-h3">End a semester</h2>
+        <SectionHeader id="close-heading" title="End a semester" className="mb-4" />
         {!configs ? <LoadingList rows={3} label="Loading classes" /> : ready.length === 0 ? (
           <EmptyState title="No class has a semester yet" description="Set semester dates on the Classes page first." />
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <ListGroup>
             {ready.map(c => {
               const sem = configs[c.id].semester!;
               const ended = getSemesterStatus(sem) === 'ended';
               return (
-                <li key={c.id} className="flex items-center justify-between gap-3 rounded-md border-1.5 border-line bg-surface p-4">
-                  <div className="grid min-w-0 gap-1.5">
-                    <ClassChip classId={c.id} size="sm" className="justify-self-start" />
+                <li key={c.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 sm:grid-cols-[10rem_minmax(0,1fr)_auto] sm:px-5">
+                  <ClassChip classId={c.id} size="sm" className="justify-self-start" />
+                  <div className="col-start-1 row-start-2 min-w-0 sm:col-start-auto sm:row-start-auto">
                     <p className="text-small text-muted">{sem.label ? `${sem.label}, ` : ''}{ended ? 'ended' : 'ends'} {formatDateShort(sem.endDate)}</p>
                   </div>
-                  <Button size="sm" variant={ended ? 'dark' : 'outline'} onClick={() => setClosing(c.id)}>
+                  <Button size="sm" variant={ended ? 'dark' : 'outline'} className="col-start-2 row-span-2 row-start-1 sm:col-start-auto sm:row-span-1 sm:row-start-auto" onClick={() => setClosing(c.id)}>
                     <Archive size={14} aria-hidden="true" /> Archive
                   </Button>
                 </li>
               );
             })}
-          </ul>
+          </ListGroup>
         )}
       </section>
 
       <section aria-labelledby="past-heading">
-        <h2 id="past-heading" className="mb-3 font-heading text-h3">Past semesters</h2>
+        <SectionHeader id="past-heading" title="Past semesters" className="mb-4" />
         {error ? <ErrorState description="Check your connection and try again." onRetry={load} />
           : !archives ? <LoadingList rows={3} label="Loading archives" />
           : archives.length === 0 ? <EmptyState title="Nothing archived yet" description="Archived semesters appear here." />
           : (
-            <ul className="grid gap-2">
+            <ListGroup>
               {archives.map(a => <ArchiveRow key={a.id} entry={a} open={open === a.id} onToggle={() => setOpen(open === a.id ? null : a.id)} />)}
-            </ul>
+            </ListGroup>
           )}
       </section>
 
@@ -109,9 +107,9 @@ function ArchiveRow({ entry, open, onToggle }: { entry: ArchiveEntry; open: bool
   const present = counted.filter(r => r.present).length;
 
   return (
-    <li className="rounded-md border-1.5 border-line bg-surface">
+    <li>
       <button type="button" onClick={onToggle} aria-expanded={open}
-        className="flex w-full items-center gap-3 p-4 text-left focus-visible:outline-none focus-visible:shadow-focus">
+        className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-canvas focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_#1F64B0] sm:px-5">
         <ClassChip classId={entry.classId} size="sm" />
         <span className="min-w-0 flex-1">
           <span className="block truncate font-semibold">{entry.semesterLabel}</span>
@@ -123,7 +121,7 @@ function ArchiveRow({ entry, open, onToggle }: { entry: ArchiveEntry; open: bool
         <ChevronDown size={18} aria-hidden="true" className={cn('transition-transform', open && 'rotate-180')} />
       </button>
       {open && (
-        <div className="grid gap-4 border-t-1.5 border-line p-4">
+        <div className="grid gap-4 border-t border-line bg-canvas/50 px-4 py-4 sm:px-5">
           {error ? <p className="text-small text-bad-fg">Couldn’t load this archive.</p> : !data ? <LoadingList rows={2} label="Loading archive" /> : (
             <>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

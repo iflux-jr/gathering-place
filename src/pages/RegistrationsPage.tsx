@@ -5,14 +5,15 @@ import { Inbox, QrCode } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PageHeader } from '../components/layout/PageHeader';
 import {
-  Button, Card, Checkbox, ClassChip, Dialog, EmptyState, ErrorState, Field, LoadingList, StatusPill,
-  Tabs, TabPanel, Textarea, buttonVariants,
+  Button, Card, Checkbox, ClassChip, Dialog, EmptyState, ErrorState, Field, ListGroup, LoadingList, StatusPill,
+  Tabs, TabPanel, Textarea, buttonVariants, listRow,
 } from '../components/ui';
 import {
   RegistrationError, acceptRegistration, declineRegistration, getJoinableClasses, loadArchiveLookup,
   subscribeToRegistrations, type AcceptContext,
 } from '../firebase/registrations';
 import { subscribeToRegistrationStatus } from '../firebase/systemSettings';
+import { cn } from '../lib/cn';
 import useAuthStore from '../store/authStore';
 import { formatPhone } from '../lib/phone';
 import { formatRefCode } from '../lib/refCode';
@@ -52,7 +53,7 @@ export default function RegistrationsPage() {
                 <StatusPill status={regOpen ? 'open' : 'paused'}>{regOpen ? 'Sign-ups open' : 'Sign-ups paused'}</StatusPill>
               </Link>
             )}
-            <Link to="/invite" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+            <Link to="/invite" className={buttonVariants({ variant: 'outline' })}>
               <QrCode size={16} aria-hidden="true" /> Share sign-up link
             </Link>
           </>
@@ -160,8 +161,8 @@ function PendingQueue({ rows, error, retry }: ReturnType<typeof useRegistrations
   const allChecked = chosen.length === rows.length ? true : chosen.length ? 'indeterminate' : false;
 
   return (
-    <div className="grid gap-3 pb-24">
-      <div className="flex items-center justify-between gap-3 px-1">
+    <div className="grid gap-3">
+      <div className="flex min-h-[36px] items-center justify-between gap-3 px-4 sm:px-5">
         <Checkbox
           checked={allChecked}
           onCheckedChange={v => setSelected(v ? new Set(rows.map(r => r.id)) : new Set())}
@@ -174,7 +175,7 @@ function PendingQueue({ rows, error, retry }: ReturnType<typeof useRegistrations
       <ul className="grid gap-3">
         {rows.map(r => (
           <li key={r.id}>
-            <Card className="grid gap-3">
+            <Card className="grid gap-3 lg:p-5">
               <div className="flex items-start gap-3">
                 <Checkbox
                   hideLabel
@@ -206,12 +207,12 @@ function PendingQueue({ rows, error, retry }: ReturnType<typeof useRegistrations
       </ul>
 
       {chosen.length > 0 && (
-        <div className="fixed inset-x-0 bottom-[calc(72px+env(safe-area-inset-bottom))] z-30 px-4 lg:bottom-6 lg:left-[256px]">
-          <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 rounded-full border-1.5 border-ink bg-ink py-2 pl-5 pr-2 text-white shadow-lg">
+        <div className="sticky bottom-[calc(84px+env(safe-area-inset-bottom))] z-30 lg:bottom-6">
+          <div className="flex items-center justify-between gap-3 rounded-full bg-ink py-2 pl-5 pr-2 text-white shadow-lg">
             <p className="text-small font-semibold">{chosen.length} selected</p>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" disabled={!!busy} onClick={() => setDeclining(chosen)}>Decline</Button>
-              <Button size="sm" variant="lime" disabled={!!busy} onClick={() => accept(chosen)}>Accept {chosen.length}</Button>
+              <Button size="sm" variant="accent" disabled={!!busy} onClick={() => accept(chosen)}>Accept {chosen.length}</Button>
             </div>
           </div>
         </div>
@@ -290,10 +291,9 @@ function ReviewedList({ status }: { status: 'accepted' | 'declined' }) {
     return <EmptyState title={status === 'accepted' ? 'None accepted yet' : 'None declined'} />;
   }
   return (
-    <ul className="grid gap-3">
+    <ListGroup>
       {rows.map(r => (
-        <li key={r.id}>
-          <Card quiet className="grid gap-2">
+        <li key={r.id} className={cn('grid gap-2', listRow)}>
             <RegistrationSummary r={r} />
             <div className="flex flex-wrap items-center gap-2">
               <StatusPill status={status} size="sm" />
@@ -305,9 +305,8 @@ function ReviewedList({ status }: { status: 'accepted' | 'declined' }) {
                 <span className="text-muted"> · {r.shareReason ? 'shown to student' : 'admins only'}</span>
               </p>
             )}
-          </Card>
         </li>
       ))}
-    </ul>
+    </ListGroup>
   );
 }

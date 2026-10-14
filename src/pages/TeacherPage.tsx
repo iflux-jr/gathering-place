@@ -86,15 +86,16 @@ function ClassView({ classId, uid, isAdmin }: { classId: string; uid: string; is
   const loadError = config.error || students.error;
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <Card tone={color.surface} className="mb-6 grid gap-4">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <p className="text-small font-semibold">{isAdmin ? 'Your class' : 'Attendance'}</p>
-            <h1 className="font-heading text-h1 md:text-h1-lg">{label}</h1>
-          </div>
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)] lg:gap-8">
+      <Card tone={color.surface} className="grid gap-5 lg:sticky lg:top-24">
+        <div>
+          <p className="text-small font-medium text-ink/70">{isAdmin ? 'Your class' : 'Attendance'}</p>
+          <h1 className="font-heading text-h1 md:text-h1-lg">{label}</h1>
           {semester && (
-            <p className="text-small">{semester.label ? `${semester.label} · ` : ''}{formatDateShort(semester.startDate)} – {formatDateShort(semester.endDate)}</p>
+            <p className="mt-1 text-small text-ink/70">
+              {semester.label && <span className="block">{semester.label}</span>}
+              {formatDateShort(semester.startDate)} – {formatDateShort(semester.endDate)}
+            </p>
           )}
         </div>
 
@@ -102,19 +103,19 @@ function ClassView({ classId, uid, isAdmin }: { classId: string; uid: string; is
           <Skeleton className="h-24 w-full rounded-md" />
         ) : semester && (status === 'active' || status === 'ended') && week ? (
           <>
-            <ProgressBar value={currentWeek ?? totalWeeks} max={totalWeeks} label="Semester progress" track="rgba(27,26,23,.15)"
+            <ProgressBar value={currentWeek ?? totalWeeks} max={totalWeeks} label="Semester progress" track="rgba(18,18,20,.12)"
               valueText={status === 'ended' ? 'Semester ended' : `Week ${currentWeek} of ${totalWeeks}`} />
-            <div className="rounded-md border-1.5 border-ink bg-surface p-2">
+            <div className="rounded-md bg-surface p-3 shadow-sm">
               <WeekPicker week={week} lastWeek={lastWeek} totalWeeks={totalWeeks} currentWeek={currentWeek} semester={semester} onChange={setWeek} />
             </div>
             {sessionsPerWeek > 1 && (
-              <div className="flex flex-wrap gap-2" role="group" aria-label="Session">
+              <div className="grid grid-cols-2 gap-2" role="group" aria-label="Session">
                 {Array.from({ length: sessionsPerWeek }, (_, i) => i + 1).map(n => {
                   const holiday = isHolidaySession(config.value, week, n);
                   const note = holiday ? 'no class' : sessionDone.has(n) ? 'sent' : 'to do';
                   return (
-                    <FilterChip key={n} selected={session === n} onClick={() => setSession(n)}>
-                      Session {n} <span className="font-normal">· {note}</span>
+                    <FilterChip key={n} selected={session === n} onClick={() => setSession(n)} className="justify-center">
+                      Session {n} <span className="font-normal opacity-80">· {note}</span>
                     </FilterChip>
                   );
                 })}
@@ -124,46 +125,48 @@ function ClassView({ classId, uid, isAdmin }: { classId: string; uid: string; is
         ) : null}
       </Card>
 
-      {loadError ? (
-        <ErrorState description="Check your connection and try again." onRetry={() => window.location.reload()} />
-      ) : config.value === undefined || students.value === undefined ? (
-        <LoadingList rows={5} label="Loading your class" />
-      ) : (
-        <Tabs
-          label="Class sections"
-          value={tab}
-          onValueChange={v => setTab(v as Tab)}
-          items={[
-            { value: 'register', label: 'Register' },
-            { value: 'students', label: 'Students' },
-            { value: 'requests', label: 'Drop requests', count: pendingDrops },
-          ]}
-        >
-          <TabPanel value="register">
-            {status === 'not_configured' ? (
-              <EmptyState icon={<CalendarClock size={32} />} title="Your class isn’t set up yet"
-                description="Ask the admin to set the semester dates and sessions per week." />
-            ) : status === 'not_started' ? (
-              <EmptyState icon={<CalendarClock size={32} />} title={`The semester starts ${formatDateShort(semester?.startDate)}`}
-                description="You can mark attendance from the first week. Meanwhile, invite students to sign up."
-                action={<Link to="/invite" className={buttonVariants({ variant: 'outline' })}>Invite students</Link>} />
-            ) : records.error ? (
-              <ErrorState description="Check your connection and try again." onRetry={() => window.location.reload()} />
-            ) : records.value === undefined || !week ? (
-              <LoadingList rows={5} label="Loading the register" />
-            ) : (
-              <RegisterPanel classId={classId} uid={uid} week={week} session={session} semester={semester!}
-                students={students.value} records={records.value} holiday={isHolidaySession(config.value, week, session)} />
-            )}
-          </TabPanel>
-          <TabPanel value="students">
-            <RosterPanel classId={classId} uid={uid} config={config.value} students={students.value} drops={drops.value ?? []} canRequestDrop={!isAdmin} />
-          </TabPanel>
-          <TabPanel value="requests">
-            <RequestsPanel drops={drops.value ?? []} uid={uid} />
-          </TabPanel>
-        </Tabs>
-      )}
+      <div className="min-w-0">
+        {loadError ? (
+          <ErrorState description="Check your connection and try again." onRetry={() => window.location.reload()} />
+        ) : config.value === undefined || students.value === undefined ? (
+          <LoadingList rows={5} label="Loading your class" />
+        ) : (
+          <Tabs
+            label="Class sections"
+            value={tab}
+            onValueChange={v => setTab(v as Tab)}
+            items={[
+              { value: 'register', label: 'Register' },
+              { value: 'students', label: 'Students' },
+              { value: 'requests', label: 'Drop requests', count: pendingDrops },
+            ]}
+          >
+            <TabPanel value="register">
+              {status === 'not_configured' ? (
+                <EmptyState icon={<CalendarClock size={32} />} title="Your class isn’t set up yet"
+                  description="Ask the admin to set the semester dates and sessions per week." />
+              ) : status === 'not_started' ? (
+                <EmptyState icon={<CalendarClock size={32} />} title={`The semester starts ${formatDateShort(semester?.startDate)}`}
+                  description="You can mark attendance from the first week. Meanwhile, invite students to sign up."
+                  action={<Link to="/invite" className={buttonVariants({ variant: 'outline' })}>Invite students</Link>} />
+              ) : records.error ? (
+                <ErrorState description="Check your connection and try again." onRetry={() => window.location.reload()} />
+              ) : records.value === undefined || !week ? (
+                <LoadingList rows={5} label="Loading the register" />
+              ) : (
+                <RegisterPanel classId={classId} uid={uid} week={week} session={session} semester={semester!}
+                  students={students.value} records={records.value} holiday={isHolidaySession(config.value, week, session)} />
+              )}
+            </TabPanel>
+            <TabPanel value="students">
+              <RosterPanel classId={classId} uid={uid} config={config.value} students={students.value} drops={drops.value ?? []} canRequestDrop={!isAdmin} />
+            </TabPanel>
+            <TabPanel value="requests">
+              <RequestsPanel drops={drops.value ?? []} uid={uid} />
+            </TabPanel>
+          </Tabs>
+        )}
+      </div>
     </div>
   );
 }

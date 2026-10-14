@@ -26,15 +26,15 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
             translate, which the entrance animation's transform would override */}
         <DialogPrimitive.Overlay
           className={cn(
-            'fixed inset-0 z-40 grid items-end bg-ink/50 sm:place-items-center sm:p-6',
+            'fixed inset-0 z-40 grid items-end bg-ink/40 backdrop-blur-[2px] sm:place-items-center sm:p-6',
             'data-[state=open]:animate-fade-in motion-reduce:animate-none',
           )}
         >
           <DialogPrimitive.Content
             className={cn(
               'flex max-h-[92dvh] w-full flex-col bg-surface shadow-lg focus:outline-none',
-              'rounded-t-frame border-t-1.5 border-ink pb-[env(safe-area-inset-bottom)]',
-              'sm:rounded-frame sm:border-1.5 sm:pb-0',
+              'rounded-t-frame pb-[env(safe-area-inset-bottom)]',
+              'sm:rounded-frame sm:pb-0',
               size === 'md' ? 'sm:max-w-lg' : 'sm:max-w-2xl',
               'data-[state=open]:animate-slide-up sm:data-[state=open]:animate-scale-in motion-reduce:animate-none',
             )}

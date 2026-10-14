@@ -23,16 +23,15 @@ function Section({ id, title, children }: { id: string; title: string; children:
 }
 
 const core: [string, string, string?][] = [
-  ['ink', colors.ink.DEFAULT, 'Text, frame, borders'],
+  ['ink', colors.ink.DEFAULT, 'Text, top bar, primary buttons'],
   ['ink-2', colors.ink[2], 'Dark cards'],
   ['canvas', colors.canvas, 'Page background'],
   ['surface', colors.surface, 'Cards, inputs'],
   ['line', colors.line.DEFAULT, 'Dividers'],
   ['muted', colors.muted, 'Secondary text'],
-  ['flame-500', colors.flame[500], 'Accent shapes'],
-  ['flame-600', colors.flame[600], 'Primary buttons'],
-  ['lime', colors.lime.DEFAULT, 'Highlight, teacher'],
-  ['violet', colors.violet.DEFAULT, 'Focus ring, admin'],
+  ['line-control', colors.line.control, 'Input and checkbox edges'],
+  ['accent-300', colors.accent[300], 'Light buttons'],
+  ['accent-600', colors.accent[600], 'Links, focus ring'],
 ];
 
 const statuses: Status[] = ['present', 'absent', 'holiday', 'unmarked', 'pending', 'accepted', 'declined', 'archived', 'open', 'paused'];
@@ -75,10 +74,10 @@ export default function StyleGuidePage() {
         <Section id="sg-colour" title="Colour">
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {core.map(([name, hex, use]) => (
-              <li key={name} className="overflow-hidden rounded-md border-1.5 border-ink bg-surface">
+              <li key={name} className="overflow-hidden rounded-md border border-line bg-surface">
                 <div className="h-16" style={{ backgroundColor: hex }} />
                 <div className="p-2.5 text-caption">
-                  <p className="font-bold text-small">{name}</p>
+                  <p className="font-semibold text-small">{name}</p>
                   <p className="font-mono text-muted">{hex}</p>
                   <p>{use}</p>
                 </div>
@@ -90,7 +89,7 @@ export default function StyleGuidePage() {
             {Object.entries(classPalette).map(([key, c]) => {
               const cls = CLASSES.find(x => DEFAULT_CLASS_COLORS[x.id] === key);
               return (
-                <li key={key} className="grid gap-2 rounded-card border-1.5 border-ink p-4" style={{ backgroundColor: c.surface }}>
+                <li key={key} className="grid gap-2 rounded-card border border-line p-4" style={{ backgroundColor: c.surface }}>
                   <span className="flex items-center justify-between gap-2">
                     <span className="rounded-full bg-ink px-2.5 py-1 text-caption font-semibold text-white">{cls?.label ?? 'Spare'}</span>
                     <span className="h-3 w-3 rounded-full" style={{ backgroundColor: c.strong }} aria-hidden="true" />
@@ -111,7 +110,7 @@ export default function StyleGuidePage() {
             <p className="font-heading text-h3">Session 2 of 2</p>
             <p className="text-body">Your registration is with the admin team. We'll let you know the outcome.</p>
             <p className="text-small text-muted">Submitted 12 Oct, 4:20 pm</p>
-            <p className="text-caption font-bold uppercase tracking-[0.06em] text-muted">Pending review</p>
+            <p className="text-caption font-semibold uppercase tracking-[0.06em] text-muted">Pending review</p>
             <p className="font-mono text-small">GP-7KQ4M2</p>
           </Card>
         </Section>
@@ -122,7 +121,7 @@ export default function StyleGuidePage() {
               <Button>Submit session</Button>
               <Button variant="dark">Accept 6 selected</Button>
               <Button variant="outline">Decline</Button>
-              <Button variant="lime">Share registration link</Button>
+              <Button variant="accent">Share registration link</Button>
               <Button variant="ghost">Cancel</Button>
               <Button variant="danger">Remove class</Button>
               <Button loading>Saving</Button>
@@ -186,20 +185,20 @@ export default function StyleGuidePage() {
                     { id: 'b', name: 'Emeka Obiora', sub: 'New this week' },
                     { id: 'c', name: 'Olumide Fashola', sub: 'Present 9 of 13' },
                   ].map(s => (
-                    <div key={s.id} className="flex items-center gap-3 rounded-md border-1.5 border-ink bg-surface p-2.5">
+                    <div key={s.id} className="flex items-center gap-3 rounded-md border border-line bg-surface p-2.5">
                       <Avatar name={s.name} />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-small font-bold">{s.name}</p>
+                        <p className="truncate text-small font-semibold">{s.name}</p>
                         <p className="truncate text-caption text-muted">{s.sub}</p>
                       </div>
                       <div className="flex gap-1.5" role="group" aria-label={`Attendance for ${s.name}`}>
                         <button
                           type="button" aria-pressed={mark[s.id] === true} onClick={() => setMark(m => ({ ...m, [s.id]: true }))}
-                          className="grid h-11 w-11 place-items-center rounded-sm border-1.5 border-ink font-heading font-extrabold aria-pressed:bg-ok-solid focus-visible:outline-none focus-visible:shadow-focus"
+                          className="grid h-11 w-11 place-items-center rounded-sm border-1.5 border-ink font-heading font-semibold aria-pressed:bg-ok-solid focus-visible:outline-none focus-visible:shadow-focus"
                         >P<span className="sr-only">resent</span></button>
                         <button
                           type="button" aria-pressed={mark[s.id] === false} onClick={() => setMark(m => ({ ...m, [s.id]: false }))}
-                          className="grid h-11 w-11 place-items-center rounded-sm border-1.5 border-ink font-heading font-extrabold aria-pressed:bg-peach focus-visible:outline-none focus-visible:shadow-focus"
+                          className="grid h-11 w-11 place-items-center rounded-sm border-1.5 border-ink font-heading font-semibold aria-pressed:bg-peach focus-visible:outline-none focus-visible:shadow-focus"
                         >A<span className="sr-only">bsent</span></button>
                       </div>
                     </div>
@@ -239,7 +238,7 @@ export default function StyleGuidePage() {
         <Section id="sg-states" title="Loading, empty, error and success">
           <div className="grid gap-4 md:grid-cols-2">
             <LoadingList rows={3} label="Loading students" />
-            <EmptyState title="No registrations waiting" description="New sign-ups from the public form appear here." action={<Button variant="lime">Share registration link</Button>} />
+            <EmptyState title="No registrations waiting" description="New sign-ups from the public form appear here." action={<Button variant="accent">Share registration link</Button>} />
             <ErrorState onRetry={() => undefined} />
             <SuccessState title="You're on the list" description="Your reference code is GP-7KQ4M2." />
           </div>

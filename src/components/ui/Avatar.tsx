@@ -25,7 +25,7 @@ export function Avatar({ name, size = 'md', tone, className }: AvatarProps) {
   return (
     <span
       aria-hidden="true"
-      className={cn('grid flex-none place-items-center rounded-full border-1.5 border-ink font-heading font-bold text-ink', sizes[size], className)}
+      className={cn('grid flex-none place-items-center rounded-full font-heading font-semibold text-ink', sizes[size], className)}
       style={{ backgroundColor: tone ?? fillFor(name) }}
     >
       {initials(name)}

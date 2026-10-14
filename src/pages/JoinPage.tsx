@@ -113,7 +113,7 @@ export default function JoinPage() {
   return (
     <PublicLayout>
       <div className="mb-6 grid gap-2">
-        <p className="text-small font-semibold text-flame-700">Young Single Adults</p>
+        <p className="text-small font-semibold text-muted">Young Single Adults</p>
         <h1 className="font-heading text-h1 text-balance md:text-h1-lg">Sign up for a class</h1>
         <p className="text-muted">
           Fill this in and the YSA admin will review it. You’ll get a reference code to check your status.
@@ -183,7 +183,7 @@ export default function JoinPage() {
             </div>
 
             {errors.form && (
-              <p role="alert" className="rounded-xs border-1.5 border-bad-fg bg-bad-bg px-4 py-3 text-small font-semibold text-bad-fg">
+              <p role="alert" className="rounded-xs border border-bad-fg/25 bg-bad-bg px-4 py-3 text-small font-semibold text-bad-fg">
                 {errors.form}
               </p>
             )}
@@ -223,7 +223,7 @@ function Confirmation({ code, name }: { code: string; name: string }) {
           The YSA admin will look at your sign-up soon. Keep this code to check whether you’ve been accepted.
         </p>
       </div>
-      <Card tone={colors.lime.DEFAULT} className="grid justify-items-center gap-2 py-8 text-center">
+      <Card tone={colors.mint} className="grid justify-items-center gap-2 py-8 text-center">
         <p className="text-small font-semibold">Your reference code</p>
         <p className="font-heading text-display tracking-[0.06em]" aria-label={`Reference code ${display.split('').join(' ')}`}>
           {display}

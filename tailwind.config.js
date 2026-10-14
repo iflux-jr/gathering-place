@@ -52,6 +52,8 @@ export default {
       },
       borderRadius: {
         xs:    radius.xs,
+        control: radius.sm,
+        md:    radius.md,
         card:  radius.lg,
         frame: radius.xl,
         '2xl': '1rem',
