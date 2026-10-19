@@ -4,7 +4,7 @@ import { getClassColor } from '../../theme/classes';
 import useClassStore from '../../store/classStore';
 import { colors } from '../../theme/tokens.js';
 
-const chipBase = 'inline-flex items-center gap-1.5 rounded-full border border-line-strong font-body font-medium whitespace-nowrap';
+const chipBase = 'inline-flex items-center gap-1.5 rounded-full border border-line-strong/80 font-body font-semibold whitespace-nowrap';
 const chipSizes = { sm: 'px-2.5 py-1 text-caption', md: 'px-3 py-1.5 text-small' };
 
 interface ChipProps extends HTMLAttributes<HTMLSpanElement> {
@@ -16,7 +16,7 @@ interface ChipProps extends HTMLAttributes<HTMLSpanElement> {
 export function Chip({ size = 'md', tone, className, style, ...props }: ChipProps) {
   return (
     <span
-      className={cn(chipBase, chipSizes[size], !tone && 'bg-surface', className)}
+      className={cn(chipBase, chipSizes[size], !tone && 'bg-white/75', className)}
       style={tone ? { backgroundColor: tone, ...style } : style}
       {...props}
     />
@@ -34,9 +34,11 @@ export function FilterChip({ selected, className, type = 'button', ...props }: F
       type={type}
       aria-pressed={selected}
       className={cn(
-        chipBase, 'min-h-[36px] px-3.5 text-small transition-colors',
+        chipBase, 'min-h-[40px] px-4 text-small transition-transform duration-150 active:scale-[.97]',
         'focus-visible:outline-none focus-visible:shadow-focus',
-        selected ? 'border-ink bg-ink text-white' : 'bg-surface text-ink hover:border-ink/40',
+        selected
+          ? 'border-brand-brown bg-brand-brown text-white shadow-[0_6px_14px_-6px_rgba(90,56,37,.6)]'
+          : 'bg-white/75 text-ink shadow-raised hover:border-ink/30',
         className,
       )}
       {...props}
@@ -108,13 +110,13 @@ interface RoleBadgeProps {
 export function RoleBadge({ role, className }: RoleBadgeProps) {
   if (role === 'admin-teacher') {
     return (
-      <Chip size="sm" className={cn('border-transparent bg-[linear-gradient(90deg,theme(colors.lilac)_50%,theme(colors.mint)_50%)]', className)}>
+      <Chip size="sm" className={cn('border-transparent bg-[linear-gradient(90deg,theme(colors.accent.100)_50%,theme(colors.mint)_50%)]', className)}>
         Admin · Teacher
       </Chip>
     );
   }
   return (
-    <Chip size="sm" tone={role === 'admin' ? colors.lilac : colors.mint} className={cn('border-transparent', className)}>
+    <Chip size="sm" tone={role === 'admin' ? colors.accent[100] : colors.mint} className={cn('border-transparent', className)}>
       {role === 'admin' ? 'Admin' : 'Teacher'}
     </Chip>
   );

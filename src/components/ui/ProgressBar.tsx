@@ -8,12 +8,12 @@ interface ProgressBarProps {
   /** Human-readable value, e.g. "Week 7 of 12" */
   valueText?: string;
   className?: string;
-  /** Track tint; the bar itself is ink, as in the references */
+  /** Track tint; the bar itself is the orange gradient */
   track?: string;
 }
 
 export function ProgressBar({ value, max = 100, label, valueText, className, track }: ProgressBarProps) {
-  const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
+  const pct = max > 0 ? Math.min(1, Math.max(0, value / max)) : 0;
   return (
     <div
       role="progressbar"
@@ -22,10 +22,14 @@ export function ProgressBar({ value, max = 100, label, valueText, className, tra
       aria-valuemax={max}
       aria-valuenow={value}
       aria-valuetext={valueText}
-      className={cn('h-2 overflow-hidden rounded-full', !track && 'bg-subtle', className)}
+      className={cn('h-2 overflow-hidden rounded-full shadow-inset', !track && 'bg-ink/[.08]', className)}
       style={track ? { backgroundColor: track } : undefined}
     >
-      <div className="h-full rounded-full bg-ink transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${pct}%` }} />
+      {/* Scaled rather than resized, so it animates on the compositor */}
+      <div
+        className="bg-primary-gradient h-full w-full origin-left rounded-full transition-transform duration-500 ease-calm motion-reduce:transition-none"
+        style={{ transform: `scaleX(${pct})` }}
+      />
     </div>
   );
 }

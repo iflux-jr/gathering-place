@@ -1,11 +1,11 @@
 import type { HTMLAttributes } from 'react';
 import { cn } from '../../lib/cn';
 
-/** One white card holding rows split by hairlines. Every list of people or requests uses it. */
+/** One glass card holding rows split by hairlines. Every list of people or requests uses it. */
 export function ListGroup({ className, ...props }: HTMLAttributes<HTMLUListElement>) {
   return (
     <ul
-      className={cn('divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-sm', className)}
+      className={cn('glass divide-y divide-line/70 overflow-hidden rounded-card', className)}
       {...props}
     />
   );

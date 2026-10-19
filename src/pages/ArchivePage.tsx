@@ -109,7 +109,7 @@ function ArchiveRow({ entry, open, onToggle }: { entry: ArchiveEntry; open: bool
   return (
     <li>
       <button type="button" onClick={onToggle} aria-expanded={open}
-        className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-canvas focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_#1F64B0] sm:px-5">
+        className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-canvas focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_#A35300] sm:px-5">
         <ClassChip classId={entry.classId} size="sm" />
         <span className="min-w-0 flex-1">
           <span className="block truncate font-semibold">{entry.semesterLabel}</span>

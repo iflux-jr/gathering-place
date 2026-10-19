@@ -15,7 +15,7 @@ export function PageHeader({ title, eyebrow, description, actions, className }: 
   return (
     <header className={cn('mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between lg:mb-8', className)}>
       <div className="min-w-0">
-        {eyebrow && <p className="mb-1 text-small font-medium text-muted">{eyebrow}</p>}
+        {eyebrow && <p className="mb-1.5 font-mono text-label uppercase text-accent-600">{eyebrow}</p>}
         <h1 className="font-heading text-h1 text-balance text-ink md:text-h1-lg">{title}</h1>
         {description && <p className="mt-1.5 max-w-[72ch] text-small text-muted">{description}</p>}
       </div>

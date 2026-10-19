@@ -15,7 +15,7 @@ export interface NavItem {
 }
 
 export const ADMIN_NAV: NavItem[] = [
-  { to: '/admin',            label: 'Home',       icon: Home, end: true },
+  { to: '/admin',            label: 'Overview',   icon: Home, end: true },
   { to: '/admin/registrations', label: 'Sign-ups', icon: Inbox, badge: 'pendingRegistrations' },
   { to: '/admin/students',   label: 'Students',   icon: Users },
   { to: '/admin/attendance', label: 'Attendance', icon: ClipboardList },
@@ -26,10 +26,10 @@ export const ADMIN_NAV: NavItem[] = [
 ];
 
 /** Shown in the phone bottom bar; the rest go under "More" */
-export const ADMIN_PRIMARY = ['/admin', '/admin/registrations', '/admin/students', '/admin/requests'];
+export const ADMIN_PRIMARY = ['/admin', '/admin/registrations', '/admin/students', '/admin/attendance'];
 
 export const TEACHER_NAV: NavItem[] = [
-  { to: '/teacher', label: 'Mark attendance', icon: CalendarCheck, end: true },
+  { to: '/teacher', label: 'My class', icon: CalendarCheck, end: true },
 ];
 
 /** Admins add students directly, skipping review */

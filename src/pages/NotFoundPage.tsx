@@ -9,7 +9,7 @@ export default function NotFoundPage() {
   const profile = useAuthStore(s => s.profile);
   const home = user ? homePathFor(profile) : '/login';
   return (
-    <main className="grid min-h-dvh place-items-center bg-canvas px-4 py-10 text-center font-body text-ink">
+    <main className="grid min-h-dvh place-items-center px-4 py-10 text-center font-body text-ink">
       <div className="grid max-w-sm justify-items-center gap-4">
         <Logo variant="mark" height={72} />
         <p className="font-heading text-display-lg">404</p>

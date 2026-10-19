@@ -86,7 +86,7 @@ export default function StudentsPage() {
             {shown.map(s => (
               <li key={s.id}>
                 <button type="button" onClick={() => setOpen(s)}
-                  className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 px-4 py-3 text-left sm:px-5 transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_#1F64B0] sm:grid-cols-[auto_minmax(0,1fr)_auto]">
+                  className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 px-4 py-3 text-left sm:px-5 transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_#A35300] sm:grid-cols-[auto_minmax(0,1fr)_auto]">
                   <Avatar name={s.name} />
                   <span className="min-w-0">
                     <span className="block truncate font-semibold">{s.name}</span>
