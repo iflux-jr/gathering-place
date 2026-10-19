@@ -1,9 +1,8 @@
-// The signed-in app frame. Desktop: a floating glass sidebar with the role switch at the top.
-// Phones: a slim header that scrolls away and a floating glass tab bar at the bottom.
-// The active item in both is marked by a pill that slides between items.
+// The signed-in app frame. Desktop: a white sidebar with grouped sections, the semester and the
+// signed-in person at the bottom. Phones: a slim header and a tab bar along the bottom.
 import { Suspense, useEffect, useId, useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, MoreHorizontal } from 'lucide-react';
+import { CalendarDays, LogOut, MoreHorizontal } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import toast from 'react-hot-toast';
 import { Logo } from '../brand/Logo';
@@ -17,6 +16,7 @@ import { subscribeToPendingDropRequests } from '../../firebase/dropRequests';
 import { subscribeToPendingRegistrationCount } from '../../firebase/registrations';
 import { useClassLabel } from '../../store/classStore';
 import { ROLE_KEY } from '../../lib/homePath';
+import { semesterRange, useProgrammeSemester } from '../../lib/useSemester';
 import { ADMIN_NAV, ADMIN_PRIMARY, INVITE_ITEM, REGISTER_ITEM, TEACHER_NAV, type NavItem } from './navigation';
 
 type Badges = Partial<Record<NonNullable<NavItem['badge']>, number>>;
@@ -60,7 +60,7 @@ function useBadges(isAdmin: boolean): Badges {
 function BadgeCount({ count, className }: { count?: number; className?: string }) {
   if (!count) return null;
   return (
-    <span className={cn('min-w-[20px] rounded-full bg-accent-500 px-1.5 py-0.5 text-center text-caption font-bold leading-none text-ink tabular-nums', className)}>
+    <span className={cn('grid h-[18px] min-w-[20px] place-items-center rounded-full bg-accent-500 px-1.5 text-[0.6875rem] font-bold leading-none text-ink tabular-nums', className)}>
       {count}<span className="sr-only"> waiting</span>
     </span>
   );
@@ -88,10 +88,10 @@ function useRole() {
 function RoleLine() {
   const { name, role } = useRole();
   return (
-    <div className="flex min-w-0 items-center gap-3">
-      <Avatar name={name} size="sm" />
+    <div className="flex min-w-0 items-center gap-2.5">
+      <Avatar name={name} size="md" className="rounded-[7px] bg-primary text-white" tone="#5A3825" />
       <div className="min-w-0">
-        <p className="truncate text-small font-semibold">{name}</p>
+        <p className="truncate text-body font-semibold">{name}</p>
         <RoleBadge role={role} className="mt-0.5" />
       </div>
     </div>
@@ -107,7 +107,7 @@ function RoleSwitch({ mode, className }: { mode: Mode; className?: string }) {
     { value: 'teacher', label: 'Teacher', to: '/teacher' },
   ];
   return (
-    <div role="group" aria-label="Switch role" className={cn('grid grid-cols-2 rounded-full bg-ink/[.06] p-1 shadow-inset', className)}>
+    <div role="group" aria-label="Switch role" className={cn('grid grid-cols-2 gap-1 rounded-[10px] border border-line bg-white p-1', className)}>
       {options.map(o => {
         const active = o.value === mode;
         return (
@@ -117,14 +117,13 @@ function RoleSwitch({ mode, className }: { mode: Mode; className?: string }) {
             aria-pressed={active}
             onClick={() => !active && navigate(o.to)}
             className={cn(
-              'relative min-h-[38px] rounded-full text-small font-semibold',
+              'relative min-h-[40px] rounded-[7px] text-small font-semibold sm:min-h-[30px]',
               'focus-visible:outline-none focus-visible:shadow-focus',
               active ? 'text-ink' : 'text-muted hover:text-ink',
             )}
           >
             {active && (
-              <motion.span layoutId={id} transition={spring} aria-hidden="true"
-                className="absolute inset-0 rounded-full border border-white/80 bg-white shadow-raised" />
+              <motion.span layoutId={id} transition={spring} aria-hidden="true" className="absolute inset-0 rounded-[7px] bg-subtle" />
             )}
             <span className="relative">{o.label}</span>
           </button>
@@ -134,8 +133,8 @@ function RoleSwitch({ mode, className }: { mode: Mode; className?: string }) {
   );
 }
 
-const menuPanel = 'glass-strong z-50 min-w-[230px] rounded-md p-1.5 text-ink data-[state=open]:animate-fade-in motion-reduce:animate-none';
-const menuItem = 'flex min-h-[44px] cursor-pointer select-none items-center gap-2.5 rounded-control px-3 text-small font-semibold outline-none data-[highlighted]:bg-ink/[.06]';
+const menuPanel = 'glass-strong z-50 min-w-[230px] rounded-[10px] p-1 text-ink data-[state=open]:animate-fade-in motion-reduce:animate-none';
+const menuItem = 'flex min-h-[44px] cursor-pointer select-none items-center gap-2.5 rounded-[7px] px-3 text-body font-medium outline-none data-[highlighted]:bg-subtle sm:min-h-[36px]';
 
 /** Avatar button with the signed-in person, their role and sign out (phones) */
 function AccountMenu() {
@@ -144,13 +143,13 @@ function AccountMenu() {
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
-        className="grid h-11 w-11 place-items-center rounded-full transition-transform active:scale-95 focus-visible:outline-none focus-visible:shadow-focus"
+        className="grid h-11 w-11 place-items-center rounded-[10px] focus-visible:outline-none focus-visible:shadow-focus"
         aria-label={`Account: ${name}`}
       >
-        <Avatar name={name} size="md" className="shadow-raised" />
+        <Avatar name={name} size="md" className="rounded-[8px] text-white" tone="#5A3825" />
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
-        <DropdownMenu.Content align="end" sideOffset={8} className={menuPanel}>
+        <DropdownMenu.Content align="end" sideOffset={6} className={menuPanel}>
           <div className="px-3 py-2.5"><RoleLine /></div>
           <DropdownMenu.Separator className="my-1 h-px bg-line" />
           <DropdownMenu.Item className={menuItem} onSelect={signOut}>
@@ -164,14 +163,35 @@ function AccountMenu() {
 
 const isActivePath = (pathname: string, i: NavItem) => (i.end ? pathname === i.to : pathname.startsWith(i.to));
 
+/** Where the semester stands, under the admin nav */
+function SemesterCard() {
+  const { semester } = useProgrammeSemester();
+  if (!semester) return null;
+  const { week, weeks, status, label } = semester;
+  const current = status === 'ended' ? weeks : week ?? 0;
+  return (
+    <NavLink to="/admin/classes" className="block rounded-card border border-[#E8DCCD] bg-cream p-3 transition-colors hover:border-[#DCC9B4] focus-visible:outline-none focus-visible:shadow-focus">
+      <p className="flex items-center gap-2 text-body font-semibold">
+        <CalendarDays className="h-4 w-4 text-accent-600" aria-hidden="true" />
+        {status === 'active' ? `Week ${week} of ${weeks}` : status === 'ended' ? 'Semester ended' : 'Starts soon'}
+      </p>
+      <p className="mt-0.5 text-caption text-[#5E4A3D]">{label} · {semesterRange(semester.semester)}</p>
+      <div className="mt-2.5 grid gap-[3px]" style={{ gridTemplateColumns: `repeat(${Math.max(weeks, 1)}, minmax(0, 1fr))` }}
+        role="img" aria-label={`Week ${current} of ${weeks}`}>
+        {Array.from({ length: weeks }, (_, i) => (
+          <span key={i} className={cn('h-[5px] rounded-full', i < current - 1 ? 'bg-primary' : i === current - 1 ? 'bg-accent-500' : 'bg-[#E3D3C1]')} />
+        ))}
+      </div>
+    </NavLink>
+  );
+}
+
 function Sidebar({ items, badges, canSwitch, mode }: { items: NavItem[]; badges: Badges; canSwitch: boolean; mode: Mode }) {
   const { pathname } = useLocation();
   const signOut = useSignOut();
-  const indicator = useId();
-  // Admin pages that sit under a "Manage" heading
-  const manage = ['/admin/archive', '/admin/settings', '/register'];
-  const main = items.filter(i => !manage.includes(i.to));
-  const rest = items.filter(i => manage.includes(i.to));
+  const groups = mode === 'admin'
+    ? (['General', 'Records', 'Manage'] as const).map(g => ({ title: g, items: items.filter(i => i.group === g) }))
+    : [{ title: 'Teaching', items }];
 
   const link = (item: NavItem) => {
     const active = isActivePath(pathname, item);
@@ -180,44 +200,42 @@ function Sidebar({ items, badges, canSwitch, mode }: { items: NavItem[]; badges:
         <NavLink
           to={item.to} end={item.end}
           className={cn(
-            'relative flex min-h-[44px] items-center gap-3 rounded-[14px] px-3 text-small font-semibold',
+            'flex h-[34px] items-center gap-2.5 rounded-[7px] px-2 text-body',
             'focus-visible:outline-none focus-visible:shadow-focus',
-            active ? 'text-ink' : 'text-muted hover:text-ink',
+            active ? 'bg-subtle font-semibold text-ink' : 'text-ink-2 hover:bg-canvas',
           )}
         >
-          {active && (
-            <motion.span layoutId={indicator} transition={spring} aria-hidden="true"
-              className="absolute inset-0 rounded-[14px] border border-white/90 bg-white shadow-raised" />
-          )}
-          <item.icon className={cn('relative h-[18px] w-[18px]', active ? 'text-accent-600' : 'text-muted')} aria-hidden="true" />
-          <span className="relative flex-1 truncate">{item.label === 'Drop requests' ? 'Requests' : item.label}</span>
-          <BadgeCount count={item.badge && badges[item.badge]} className="relative" />
+          <item.icon className={cn('h-4 w-4 flex-none', active ? 'text-accent-600' : 'text-muted')} strokeWidth={1.8} aria-hidden="true" />
+          <span className="flex-1 truncate">{item.label}</span>
+          <BadgeCount count={item.badge && badges[item.badge]} />
         </NavLink>
       </li>
     );
   };
 
   return (
-    <aside className="glass fixed inset-y-4 left-4 z-30 hidden w-[256px] flex-col rounded-frame p-4 lg:flex print:hidden">
-      <NavLink to="/" aria-label="The Gathering Place, home" className="mb-5 self-start rounded-md px-1 pt-1 focus-visible:outline-none focus-visible:shadow-focus">
-        <Logo height={40} />
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-[232px] flex-col border-r border-line bg-white px-3 pb-3 pt-5 lg:flex print:hidden">
+      <NavLink to="/" aria-label="The Gathering Place, home" className="mb-5 self-start rounded-md px-2 focus-visible:outline-none focus-visible:shadow-focus">
+        <Logo height={30} />
       </NavLink>
       {canSwitch && <RoleSwitch mode={mode} className="mb-4" />}
       <nav aria-label="Main" className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
-        <ul className="grid gap-1">{main.map(link)}</ul>
-        {rest.length > 0 && (
-          <>
-            <p className="mb-1.5 mt-5 px-3 font-mono text-label uppercase text-muted">Manage</p>
-            <ul className="grid gap-1">{rest.map(link)}</ul>
-          </>
-        )}
+        {groups.map(g => g.items.length > 0 && (
+          <div key={g.title} className="mb-4">
+            <p className="mb-1 px-2 text-label font-semibold uppercase text-faint">{g.title}</p>
+            <ul className="grid gap-px">{g.items.map(link)}</ul>
+          </div>
+        ))}
       </nav>
-      <div className="mt-4 grid gap-2 rounded-md border border-white/70 bg-white/55 p-3">
-        <RoleLine />
-        <button type="button" onClick={signOut}
-          className="flex min-h-[40px] items-center gap-2 rounded-control px-2 text-small font-semibold text-muted transition-transform hover:bg-ink/[.05] hover:text-ink active:scale-[.98] focus-visible:outline-none focus-visible:shadow-focus">
-          <LogOut className="h-4 w-4" aria-hidden="true" /> Sign out
-        </button>
+      <div className="grid gap-2">
+        {mode === 'admin' && <SemesterCard />}
+        <div className="flex items-center gap-2 rounded-card border border-line p-2">
+          <div className="min-w-0 flex-1"><RoleLine /></div>
+          <button type="button" onClick={signOut} aria-label="Sign out" title="Sign out"
+            className="grid h-8 w-8 flex-none place-items-center rounded-[7px] text-muted hover:bg-canvas hover:text-ink focus-visible:outline-none focus-visible:shadow-focus">
+            <LogOut className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
       </div>
     </aside>
   );
@@ -225,9 +243,9 @@ function Sidebar({ items, badges, canSwitch, mode }: { items: NavItem[]; badges:
 
 function PhoneHeader() {
   return (
-    <header className="flex items-center justify-between px-4 pb-1 pt-[calc(env(safe-area-inset-top)+14px)] sm:px-6 lg:hidden print:hidden">
+    <header className="flex items-center justify-between border-b border-line bg-white px-4 pb-2 pt-[calc(env(safe-area-inset-top)+8px)] lg:hidden print:hidden">
       <NavLink to="/" aria-label="The Gathering Place, home" className="rounded-md focus-visible:outline-none focus-visible:shadow-focus">
-        <Logo height={34} />
+        <Logo height={28} />
       </NavLink>
       <AccountMenu />
     </header>
@@ -238,7 +256,6 @@ function BottomBar({ items, badges, canSwitch, mode }: { items: NavItem[]; badge
   const [moreOpen, setMoreOpen] = useState(false);
   const { pathname } = useLocation();
   const signOut = useSignOut();
-  const indicator = useId();
   useEffect(() => setMoreOpen(false), [pathname]);
 
   const primary = mode === 'admin' ? items.filter(i => ADMIN_PRIMARY.includes(i.to)) : items.slice(0, 3);
@@ -248,54 +265,50 @@ function BottomBar({ items, badges, canSwitch, mode }: { items: NavItem[]; badge
 
   const tab = (active: boolean, icon: ReactNode, label: string, badge?: number) => (
     <>
-      <span className="relative grid h-9 w-14 place-items-center">
-        {active && (
-          <motion.span layoutId={indicator} transition={spring} aria-hidden="true"
-            className="absolute inset-0 rounded-full bg-brand-brown shadow-[0_6px_14px_-6px_rgba(90,56,37,.7)]" />
-        )}
-        <span className={cn('relative', active ? 'text-white' : 'text-muted')}>{icon}</span>
-        <BadgeCount count={badge} className="absolute -right-1 -top-1" />
+      <span className={cn('relative grid h-7 w-12 place-items-center rounded-full', active ? 'bg-subtle text-accent-600' : 'text-muted')}>
+        {icon}
+        <BadgeCount count={badge} className="absolute -right-1.5 -top-1" />
       </span>
-      <span className={cn('text-[0.6875rem] font-semibold', active ? 'text-ink' : 'text-muted')}>{label}</span>
+      <span className={cn('text-[0.6875rem]', active ? 'font-semibold text-ink' : 'font-medium text-muted')}>{label}</span>
     </>
   );
-  const tabClass = 'flex min-h-[58px] flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] transition-transform active:scale-95 focus-visible:outline-none focus-visible:shadow-focus';
+  const tabClass = 'flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 rounded-[10px] focus-visible:outline-none focus-visible:shadow-focus';
 
   return (
     <>
       <nav aria-label="Main"
-        className="glass-strong fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+10px)] z-30 rounded-[28px] px-1.5 py-1 lg:hidden print:hidden">
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 lg:hidden print:hidden">
         <ul className="flex">
           {primary.map(item => (
             <li key={item.to} className="flex flex-1">
               <NavLink to={item.to} end={item.end} className={tabClass}>
-                {({ isActive }) => tab(isActive, <item.icon className="h-5 w-5" aria-hidden="true" />, shortLabel(item.label), item.badge && badges[item.badge])}
+                {({ isActive }) => tab(isActive, <item.icon className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden="true" />, shortLabel(item.label), item.badge && badges[item.badge])}
               </NavLink>
             </li>
           ))}
           <li className="flex flex-1">
             <button type="button" className={tabClass} onClick={() => setMoreOpen(true)} aria-haspopup="dialog">
-              {tab(moreActive, <MoreHorizontal className="h-5 w-5" aria-hidden="true" />, 'More', moreBadge)}
+              {tab(moreActive, <MoreHorizontal className="h-[18px] w-[18px]" aria-hidden="true" />, 'More', moreBadge)}
             </button>
           </li>
         </ul>
       </nav>
       <Dialog open={moreOpen} onOpenChange={setMoreOpen} title="More">
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           <RoleLine />
           {canSwitch && <RoleSwitch mode={mode} />}
-          <ul className="grid gap-1.5">
+          <ul className="grid divide-y divide-line overflow-hidden rounded-card border border-line">
             {rest.map(item => (
               <li key={item.to}>
                 <NavLink
                   to={item.to} end={item.end}
                   className={({ isActive }) => cn(
-                    'flex min-h-[52px] items-center gap-3 rounded-md border px-4 text-body font-semibold',
-                    'transition-transform active:scale-[.98] focus-visible:outline-none focus-visible:shadow-focus',
-                    isActive ? 'border-brand-brown bg-brand-brown text-white' : 'border-white/80 bg-white/70 shadow-raised',
+                    'flex min-h-[48px] items-center gap-3 px-3 text-body font-medium',
+                    'focus-visible:outline-none focus-visible:shadow-focus',
+                    isActive ? 'bg-subtle font-semibold' : 'bg-white',
                   )}
                 >
-                  <item.icon className="h-5 w-5" aria-hidden="true" />
+                  <item.icon className="h-[18px] w-[18px] text-muted" strokeWidth={1.8} aria-hidden="true" />
                   <span className="flex-1">{item.label}</span>
                   <BadgeCount count={item.badge && badges[item.badge]} />
                 </NavLink>
@@ -304,9 +317,9 @@ function BottomBar({ items, badges, canSwitch, mode }: { items: NavItem[]; badge
             <li>
               <button
                 type="button" onClick={signOut}
-                className="flex min-h-[52px] w-full items-center gap-3 rounded-md border border-white/80 bg-white/70 px-4 text-body font-semibold shadow-raised transition-transform active:scale-[.98] focus-visible:outline-none focus-visible:shadow-focus"
+                className="flex min-h-[48px] w-full items-center gap-3 bg-white px-3 text-body font-medium focus-visible:outline-none focus-visible:shadow-focus"
               >
-                <LogOut className="h-5 w-5" aria-hidden="true" /> Sign out
+                <LogOut className="h-[18px] w-[18px] text-muted" aria-hidden="true" /> Sign out
               </button>
             </li>
           </ul>
@@ -322,6 +335,7 @@ function shortLabel(label: string): string {
   if (label === 'My class' || label.endsWith(' class')) return 'Class';
   if (label === 'Invite students') return 'Invite';
   if (label === 'Add student') return 'Add';
+  if (label === 'Classes & semesters') return 'Classes';
   return label;
 }
 
@@ -330,18 +344,20 @@ export default function AppShell({ children }: { children?: ReactNode }) {
   const badges = useBadges(isAdmin);
   return (
     <div className="flex min-h-dvh flex-col font-body text-ink">
-      <a href="#main" className="sr-only z-50 rounded-full bg-ink px-4 py-2 text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
+      <a href="#main" className="sr-only z-50 rounded-control bg-ink px-4 py-2 text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
         Skip to content
       </a>
       <Sidebar items={items} badges={badges} canSwitch={canSwitch} mode={mode} />
       <PhoneHeader />
       <main id="main" tabIndex={-1}
-        className="mx-auto w-full max-w-6xl flex-1 px-4 pb-32 pt-4 focus:outline-none sm:px-6 lg:pb-12 lg:pl-[304px] lg:pr-8 lg:pt-10 xl:max-w-[1360px] xl:pr-12">
-        {children ?? (
-          <Suspense fallback={<LoadingList rows={4} />}>
-            <PageTransition><Outlet /></PageTransition>
-          </Suspense>
-        )}
+        className="w-full flex-1 px-4 pb-28 pt-4 focus:outline-none sm:px-6 lg:pb-8 lg:pl-[256px] lg:pr-6 lg:pt-5">
+        <div className="mx-auto w-full max-w-[1280px]">
+          {children ?? (
+            <Suspense fallback={<LoadingList rows={4} />}>
+              <PageTransition><Outlet /></PageTransition>
+            </Suspense>
+          )}
+        </div>
       </main>
       <BottomBar items={items} badges={badges} canSwitch={canSwitch} mode={mode} />
     </div>

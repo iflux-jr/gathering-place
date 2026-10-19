@@ -15,7 +15,9 @@ export default {
         class: classColors,
       },
       fontFamily: {
-        heading: fonts.display,
+        // Headings use the UI face too (the workspace look); Bricolage is kept for brand moments
+        heading: fonts.body,
+        display: fonts.display,
         body:    fonts.body,
         mono:    fonts.mono,
       },
@@ -34,7 +36,7 @@ export default {
       minWidth:  { touch: '44px' },
       transitionTimingFunction: { calm: 'cubic-bezier(0.22, 1, 0.36, 1)' },
       animation: {
-        'fade-in':   'fadeIn 0.24s cubic-bezier(0.22,1,0.36,1)',
+        'fade-in':   'fadeIn 0.18s cubic-bezier(0.22,1,0.36,1)',
         'pulse-warm':'pulseWarm 2.4s ease-in-out infinite',
       },
       keyframes: {

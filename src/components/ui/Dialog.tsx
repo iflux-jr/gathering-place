@@ -33,7 +33,7 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
             {/* Content sits inside the overlay so it can be centred with grid */}
             <DialogPrimitive.Overlay asChild forceMount>
               <motion.div
-                className="fixed inset-0 z-40 grid items-end bg-ink/35 sm:place-items-center sm:p-6"
+                className="fixed inset-0 z-40 grid items-end bg-ink/30 sm:place-items-center sm:p-6"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -51,24 +51,24 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
                     exit={wide ? { opacity: 0, scale: 0.97, y: 4 } : { y: '100%' }}
                     transition={wide ? { duration: m.base, ease } : { duration: 0.34, ease }}
                   >
-                    <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-ink/15 sm:hidden" aria-hidden="true" />
-                    <div className="flex items-start gap-3 px-5 pt-4 sm:px-6 sm:pt-6">
+                    <div className="mx-auto mt-2.5 h-1 w-9 rounded-full bg-ink/15 sm:hidden" aria-hidden="true" />
+                    <div className="flex items-start gap-3 px-5 pt-4 sm:pt-5">
                       <div className="grid min-w-0 flex-1 gap-1">
-                        <DialogPrimitive.Title className="font-heading text-h2 text-ink">{title}</DialogPrimitive.Title>
+                        <DialogPrimitive.Title className="font-heading text-h2-lg font-bold text-ink">{title}</DialogPrimitive.Title>
                         {description && (
                           <DialogPrimitive.Description className="text-small text-muted">{description}</DialogPrimitive.Description>
                         )}
                       </div>
                       <DialogPrimitive.Close
-                        className="-mr-2 -mt-1 grid h-11 w-11 flex-none place-items-center rounded-full text-ink transition-transform hover:bg-ink/[.06] active:scale-95 focus-visible:outline-none focus-visible:shadow-focus"
+                        className="-mr-1 -mt-1 grid h-10 w-10 flex-none place-items-center rounded-control border border-line text-muted transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-none focus-visible:shadow-focus sm:h-8 sm:w-8"
                         aria-label="Close"
                       >
                         <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                       </DialogPrimitive.Close>
                     </div>
-                    <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">{children}</div>
+                    <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
                     {footer && (
-                      <div className="flex flex-col-reverse gap-2 border-t border-line/70 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+                      <div className="flex flex-col-reverse gap-2 border-t border-line px-5 py-3 sm:flex-row sm:justify-end">
                         {footer}
                       </div>
                     )}

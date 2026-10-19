@@ -2,36 +2,33 @@ import { cva } from 'class-variance-authority';
 
 /**
  * Button classes, shared by <Button> and links styled as buttons.
- * One primary (orange gradient, ink text: white on brand orange fails contrast) per screen.
- * Hover lifts a pixel and a press scales down; both are transforms, so they stay smooth.
+ * Primary is brand brown with white text. Accent is the orange fill (ink text: white on brand
+ * orange fails contrast). 44px tall on phones, 38px from 640px up.
  */
 export const buttonVariants = cva(
   [
-    'relative inline-flex items-center justify-center gap-2 rounded-full border font-body font-semibold',
+    'relative inline-flex items-center justify-center gap-1.5 rounded-control border font-body font-semibold',
     'select-none whitespace-nowrap',
-    'transition-transform duration-150 ease-calm active:scale-[.97] motion-reduce:transform-none',
+    'transition-colors duration-150 active:scale-[.98] motion-reduce:transform-none',
     'focus-visible:outline-none focus-visible:shadow-focus',
     'disabled:pointer-events-none disabled:opacity-50',
   ],
   {
     variants: {
       variant: {
-        primary: [
-          'bg-primary-gradient border-accent-600/25 text-ink',
-          'shadow-[inset_0_1px_0_rgba(255,255,255,.45),0_1px_2px_rgba(90,56,37,.12),0_8px_20px_-6px_rgba(229,122,6,.55)]',
-          'hover:-translate-y-px',
-        ],
-        dark:    'bg-ink border-ink text-white shadow-[inset_0_1px_0_rgba(255,255,255,.12),0_8px_20px_-8px_rgba(43,27,18,.5)] hover:-translate-y-px hover:bg-ink-2',
-        outline: 'bg-white/80 border-line-strong text-ink shadow-raised hover:-translate-y-px hover:border-ink/30 hover:bg-white',
+        primary: 'bg-primary border-primary text-white hover:bg-primary-hover',
+        // Kept for older call sites; same as primary in the workspace look
+        dark:    'bg-primary border-primary text-white hover:bg-primary-hover',
+        outline: 'bg-white border-line-strong text-ink hover:bg-canvas',
         ghost:   'bg-transparent border-transparent text-ink hover:bg-ink/[.05]',
-        accent:  'bg-accent-50 border-accent-300/70 text-ink shadow-raised hover:-translate-y-px hover:bg-accent-100',
-        danger:  'bg-white/80 border-bad-fg/35 text-bad-fg shadow-raised hover:bg-bad-bg',
+        accent:  'bg-accent-500 border-accent-500 text-ink hover:bg-accent-400',
+        danger:  'bg-white border-bad-fg/35 text-bad-fg hover:bg-bad-bg',
       },
       size: {
-        sm:   'min-h-[38px] px-4 text-small',
-        md:   'min-h-touch px-5 text-[0.9375rem]',
-        lg:   'min-h-[54px] px-7 text-body',
-        icon: 'h-11 w-11 p-0',
+        sm:   'min-h-[36px] px-3 text-small sm:min-h-[32px]',
+        md:   'min-h-touch px-4 text-body sm:min-h-[38px]',
+        lg:   'min-h-[48px] px-5 text-body',
+        icon: 'h-11 w-11 p-0 sm:h-9 sm:w-9',
       },
       block: { true: 'w-full' },
     },

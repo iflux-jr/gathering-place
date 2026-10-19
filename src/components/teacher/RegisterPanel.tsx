@@ -1,11 +1,10 @@
 // Marking one session: a Present/Absent toggle per student, saved on the device as the
 // teacher goes, and sent with one button at the end.
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarOff, Check, CloudOff, Search, Users, X } from 'lucide-react';
+import { CalendarOff, Check, CloudOff, Search, Send, Users, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Avatar, Button, Card, Dialog, EmptyState, Input, ProgressBar } from '../ui';
+import { Avatar, Button, Card, Dialog, EmptyState, Input } from '../ui';
 import { AnimatedNumber, Stagger, StaggerItem } from '../motion';
-import { motion, spring } from '../motion/config';
 import { cn } from '../../lib/cn';
 import { clearDraft, loadDraft, saveDraft, type Marks } from '../../lib/draft';
 import { submitSessionAttendance } from '../../firebase/attendance';
@@ -112,7 +111,7 @@ export function RegisterPanel({ classId, uid, week, session, semester, students,
   if (holiday) {
     return (
       <Card className="grid justify-items-center gap-3 px-6 py-12 text-center">
-        <span className="mb-1 grid h-14 w-14 place-items-center rounded-full bg-info-bg text-info-fg shadow-raised" aria-hidden="true">
+        <span className="mb-1 grid h-14 w-14 place-items-center rounded-full bg-info-bg text-info-fg" aria-hidden="true">
           <CalendarOff size={24} />
         </span>
         <h3 className="font-heading text-h3">No class this session</h3>
@@ -145,78 +144,67 @@ export function RegisterPanel({ classId, uid, week, session, semester, students,
   ) : null;
 
   return (
-    <div className="grid gap-4">
-      <div className="grid grid-cols-3 gap-2.5" aria-live="polite">
-        <Tally value={present} label="present" tone="text-ok-fg" dot="bg-ok-solid" />
-        <Tally value={absent} label="absent" tone="text-bad-fg" dot="bg-bad-solid" />
-        <Tally value={unmarked} label="not marked" tone={unmarked > 0 ? 'text-warn-fg' : 'text-muted'} dot={unmarked > 0 ? 'bg-accent-500' : 'bg-line-strong'} />
+    <div className="grid gap-3">
+      <div className="grid grid-cols-3 gap-2" aria-live="polite">
+        <Tally value={present} label="Present" dot="bg-ok-solid" />
+        <Tally value={absent} label="Absent" dot="bg-bad-solid" />
+        <Tally value={unmarked} label="Not marked" dot={unmarked > 0 ? 'bg-accent-500' : 'bg-line-strong'} />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        {unmarked > 0 && (unmarked === students.length ? (
-          <Button size="sm" variant="outline" onClick={() => markRest(true)}>
-            <Check size={16} aria-hidden="true" /> Everyone present
-          </Button>
-        ) : (
-          <>
-            <Button size="sm" variant="outline" onClick={() => markRest(true)}>
-              <Check size={16} aria-hidden="true" /> <span className="sm:hidden">Rest present</span><span className="hidden sm:inline">Mark the rest present</span>
+      <section className="overflow-hidden rounded-card border border-line bg-white">
+        <div className="flex flex-wrap items-center gap-2 px-4 pb-2.5 pt-3">
+          <h2 className="font-heading text-h3 font-semibold">Students · {students.length}</h2>
+          <div className="ml-auto flex items-center gap-1">
+            {unmarked > 0 && unmarked < students.length && (
+              <Button size="sm" variant="ghost" className="px-2.5" onClick={() => markRest(false)}>
+                <X size={15} aria-hidden="true" /> Rest absent
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" className="px-2.5" onClick={() => setHolidayOpen(true)}>
+              <CalendarOff size={15} aria-hidden="true" /> No class?
             </Button>
-            <Button size="sm" variant="outline" onClick={() => markRest(false)}>
-              <X size={16} aria-hidden="true" /> <span className="sm:hidden">Rest absent</span><span className="hidden sm:inline">Mark the rest absent</span>
-            </Button>
-          </>
-        ))}
-        <Button size="sm" variant="ghost" className="ml-auto px-3" onClick={() => setHolidayOpen(true)}>
-          <CalendarOff size={16} aria-hidden="true" /> No class?
-        </Button>
-      </div>
-
-      {students.length > 10 && (
-        <div className="relative">
-          <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true" />
-          <Input type="search" aria-label="Find a student" placeholder="Find a student" className="pl-11"
-            value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-      )}
-
-      <Stagger as="ul" aria-label={`Students, week ${week} session ${session}`}
-        className="glass divide-y divide-line/70 overflow-hidden rounded-card">
-        {shown.map(s => {
-          const value = marks[s.id];
-          const changed = s.id in marks && value !== saved[s.id];
-          return (
-            <StaggerItem as="li" key={s.id} className="relative flex items-center gap-3 py-2.5 pl-3 pr-2.5 sm:pl-4">
-              {/* Faint row tint once marked, faded in with opacity */}
-              <span aria-hidden="true" className={cn(
-                'pointer-events-none absolute inset-0 transition-opacity duration-300',
-                value === true ? 'bg-ok-bg/50' : 'bg-bad-bg/60',
-                value === undefined ? 'opacity-0' : 'opacity-100',
-              )} />
-              <Avatar name={s.name} size="md" className="relative" />
-              <div className="relative min-w-0 flex-1">
-                <p className="truncate font-semibold">{s.name}</p>
-                {changed && <p className="text-caption font-medium text-warn-fg">Changed, not sent</p>}
-              </div>
-              <MarkToggle name={s.name} id={s.id} value={value} onChange={v => mark(s.id, v)} />
-            </StaggerItem>
-          );
-        })}
-        {shown.length === 0 && <li className="px-4 py-6 text-center text-small text-muted">No one matches “{search}”.</li>}
-      </Stagger>
-
-      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+90px)] z-20 lg:bottom-6">
-        <div className="glass-strong flex items-center gap-3 rounded-[24px] py-2.5 pl-5 pr-2.5">
-          <div className="grid min-w-0 flex-1 gap-1.5">
-            <p className="text-small font-bold leading-tight">
-              {unmarked ? `${marked} of ${students.length} marked` : 'Everyone marked'}
-            </p>
-            {sendNote
-              ? <p className="truncate text-caption text-muted">{sendNote}</p>
-              : <ProgressBar value={marked} max={students.length} label="Marked so far" className="h-1.5 max-w-[180px]" />}
           </div>
-          <Button className="flex-none px-6" disabled={unmarked > 0 || (!unsent && (!!submittedAt || waiting))} loading={sending} onClick={submit}>
-            {waiting && !unsent ? 'Waiting' : submittedAt && !unsent ? <><Check size={16} aria-hidden="true" /> Sent</> : submittedAt ? 'Send changes' : 'Send'}
+          {students.length > 10 && (
+            <div className="relative w-full">
+              <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true" />
+              <Input type="search" aria-label="Find a student" placeholder="Find a student" className="pl-9"
+                value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+          )}
+        </div>
+
+        <Stagger as="ul" aria-label={`Students, week ${week} session ${session}`}>
+          {shown.map(s => {
+            const value = marks[s.id];
+            const changed = s.id in marks && value !== saved[s.id];
+            return (
+              <StaggerItem as="li" key={s.id} className="flex min-h-[56px] items-center gap-2.5 border-t border-line py-1.5 pl-4 pr-2">
+                <Avatar name={s.name} size="md" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{s.name}</p>
+                  {changed && <p className="text-caption font-medium text-warn-fg">Changed, not sent</p>}
+                </div>
+                <MarkToggle name={s.name} value={value} onChange={v => mark(s.id, v)} />
+              </StaggerItem>
+            );
+          })}
+          {shown.length === 0 && <li className="border-t border-line px-4 py-6 text-center text-small text-muted">No one matches “{search}”.</li>}
+        </Stagger>
+      </section>
+
+      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+66px)] z-20 lg:bottom-5">
+        <div className="flex items-center gap-2.5 rounded-card border border-line bg-white/95 py-2.5 pl-4 pr-2.5 shadow-lg">
+          <div className="min-w-0 flex-1 leading-tight">
+            <p className="text-h2 font-bold tabular-nums">{marked} / {students.length}</p>
+            <p className="truncate text-caption text-muted">{sendNote ?? 'marked'}</p>
+          </div>
+          {unmarked > 0 && (
+            <Button variant="outline" className="flex-none px-3.5" onClick={() => markRest(true)}>
+              {unmarked === students.length ? 'Mark all present' : 'Mark rest present'}
+            </Button>
+          )}
+          <Button className="flex-none px-4" disabled={unmarked > 0 || (!unsent && (!!submittedAt || waiting))} loading={sending} onClick={submit}>
+            {waiting && !unsent ? 'Waiting' : submittedAt && !unsent ? <><Check size={16} aria-hidden="true" /> Sent</> : <><Send size={15} aria-hidden="true" /> {submittedAt ? 'Send changes' : 'Send'}</>}
           </Button>
         </div>
       </div>
@@ -237,31 +225,27 @@ export function RegisterPanel({ classId, uid, week, session, semester, students,
   );
 }
 
-function Tally({ value, label, tone, dot }: { value: number; label: string; tone: string; dot: string }) {
+function Tally({ value, label, dot }: { value: number; label: string; dot: string }) {
   return (
-    <div className="glass rounded-md px-3 py-2.5 sm:px-4">
-      <p className={cn('font-heading text-[1.625rem] font-extrabold leading-none tabular-nums', tone)}>
-        <AnimatedNumber value={value} />
+    <div className="rounded-[9px] border border-line bg-white px-3 py-2.5">
+      <p className="flex items-center gap-1.5 text-caption text-muted">
+        <span aria-hidden="true" className={cn('h-2 w-2 rounded-full', dot)} />{label}
       </p>
-      <p className="mt-1 flex items-center gap-1.5 text-caption font-semibold text-muted">
-        <span aria-hidden="true" className={cn('h-1.5 w-1.5 rounded-full', dot)} />{label}
+      <p className="mt-0.5 font-heading text-[1.25rem] font-bold leading-tight tabular-nums text-ink">
+        <AnimatedNumber value={value} />
       </p>
     </div>
   );
 }
 
-/**
- * Present / Absent for one student: a pressed-in track with a pill that slides to the
- * chosen side and a tick or cross that pops. Two real buttons with aria-pressed.
- */
-function MarkToggle({ id, name, value, onChange }: { id: string; name: string; value: boolean | undefined; onChange: (v: boolean) => void }) {
+/** Present / Absent for one student: two square buttons with aria-pressed, tinted green or red when chosen */
+function MarkToggle({ name, value, onChange }: { name: string; value: boolean | undefined; onChange: (v: boolean) => void }) {
   const options = [
-    { v: true, label: 'Present', Icon: Check, pill: 'bg-ok-solid', on: 'text-white' },
-    { v: false, label: 'Absent', Icon: X, pill: 'bg-bad-solid', on: 'text-white' },
+    { v: true, label: 'Present', Icon: Check, on: 'border-[#A9D6BC] bg-ok-bg text-ok-fg' },
+    { v: false, label: 'Absent', Icon: X, on: 'border-[#F1B5AE] bg-bad-bg text-bad-fg' },
   ] as const;
   return (
-    <div role="group" aria-label={`${name}: attendance`}
-      className="relative flex flex-none gap-0.5 rounded-full bg-ink/[.06] p-1 shadow-inset">
+    <div role="group" aria-label={`${name}: attendance`} className="flex flex-none gap-1.5">
       {options.map(o => {
         const pressed = value === o.v;
         return (
@@ -272,27 +256,12 @@ function MarkToggle({ id, name, value, onChange }: { id: string; name: string; v
             aria-label={o.label}
             onClick={() => onChange(o.v)}
             className={cn(
-              'relative inline-flex h-10 min-w-[52px] items-center justify-center gap-1.5 rounded-full px-3 sm:min-w-[104px]',
-              'font-body text-small font-bold transition-transform duration-150 active:scale-95',
+              'grid h-11 w-11 place-items-center rounded-[10px] border transition-colors duration-150 active:scale-95',
               'focus-visible:outline-none focus-visible:shadow-focus',
-              pressed ? o.on : 'text-muted hover:text-ink',
+              pressed ? o.on : 'border-line-strong bg-white text-faint hover:text-ink',
             )}
           >
-            {pressed && (
-              <motion.span layoutId={`mark-${id}`} transition={spring} aria-hidden="true"
-                className={cn('absolute inset-0 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,.3),0_4px_10px_-3px_rgba(43,27,18,.35)]', o.pill)} />
-            )}
-            <motion.span
-              key={pressed ? 'on' : 'off'}
-              initial={pressed ? { scale: 0.5 } : false}
-              animate={{ scale: 1 }}
-              transition={spring}
-              className="relative"
-              aria-hidden="true"
-            >
-              <o.Icon size={16} strokeWidth={pressed ? 3 : 2.25} />
-            </motion.span>
-            <span className="relative hidden sm:inline" aria-hidden="true">{o.label}</span>
+            <o.Icon size={18} strokeWidth={pressed ? 2.75 : 2.2} aria-hidden="true" />
           </button>
         );
       })}

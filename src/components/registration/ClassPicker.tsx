@@ -1,4 +1,4 @@
-// Pick up to two classes. Each class keeps its own colour; chosen ones get a brown ring and a tick that pops in.
+// Pick up to two classes. Each class is a tile in its own pastel; a chosen one gets a ring in its colour and a tick.
 import { Check } from 'lucide-react';
 import { AnimatePresence, motion, spring } from '../motion/config';
 import { cn } from '../../lib/cn';
@@ -24,15 +24,15 @@ export function ClassPicker({ options, value, onChange, error, disabled }: Class
 
   return (
     <fieldset className="grid gap-3" aria-describedby="class-picker-count class-picker-error">
-      <div className="flex items-baseline justify-between gap-3">
-        <legend className="font-body text-small font-semibold text-ink">
-          Classes<span aria-hidden="true" className="text-bad-fg"> *</span>
+      <div className="flex items-center justify-between gap-3">
+        <legend className="font-heading text-h3 font-semibold text-ink">
+          Choose up to {MAX_CLASSES_PER_STUDENT} classes<span aria-hidden="true" className="text-bad-fg"> *</span>
         </legend>
-        <p id="class-picker-count" className="font-mono text-label uppercase text-muted" aria-live="polite">
-          {value.length} of {MAX_CLASSES_PER_STUDENT} chosen
+        <p id="class-picker-count" className="rounded-[6px] bg-subtle px-2 py-0.5 text-caption font-semibold tabular-nums text-ink-2" aria-live="polite">
+          {value.length} of {MAX_CLASSES_PER_STUDENT}
         </p>
       </div>
-      <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {options.map(c => {
           const selected = value.includes(c.id);
           const blocked = !selected && full;
@@ -45,18 +45,20 @@ export function ClassPicker({ options, value, onChange, error, disabled }: Class
                 disabled={disabled || blocked}
                 onClick={() => toggle(c.id)}
                 className={cn(
-                  'relative flex min-h-[72px] w-full flex-col items-start justify-between gap-2 rounded-md border px-3.5 py-3 text-left',
-                  'font-body text-[0.9375rem] font-semibold text-ink',
-                  'transition-transform duration-150 ease-calm active:scale-[.97]',
+                  'relative flex min-h-[64px] w-full flex-col items-start justify-between gap-2 rounded-[10px] border px-3 py-2.5 text-left',
+                  'font-body text-body font-semibold',
+                  'transition-[box-shadow,transform] duration-150 active:scale-[.98]',
                   'focus-visible:outline-none focus-visible:shadow-focus',
-                  selected
-                    ? 'border-brand-brown shadow-[0_0_0_1.5px_theme(colors.brand.brown),0_10px_22px_-10px_rgba(90,56,37,.45)]'
-                    : 'border-white/70 shadow-raised hover:-translate-y-px',
                   blocked && 'cursor-not-allowed opacity-45',
                 )}
-                style={{ backgroundColor: color.surface }}
+                style={{
+                  backgroundColor: selected ? color.surface : `${color.surface}80`,
+                  borderColor: selected ? color.strong : color.surface,
+                  boxShadow: selected ? `inset 0 0 0 1px ${color.strong}` : undefined,
+                  color: color.strong,
+                }}
               >
-                <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full ring-4 ring-white/60" style={{ backgroundColor: color.strong }} />
+                <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color.strong }} />
                 <span className="pr-7 leading-tight">{c.label}</span>
                 <AnimatePresence>
                   {selected && (
@@ -66,9 +68,10 @@ export function ClassPicker({ options, value, onChange, error, disabled }: Class
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ scale: 0.4, opacity: 0 }}
                       transition={spring}
-                      className="absolute right-2.5 top-2.5 grid h-6 w-6 place-items-center rounded-full bg-brand-brown text-white"
+                      className="absolute right-2 top-2 grid h-5 w-5 place-items-center rounded-full text-white"
+                      style={{ backgroundColor: color.strong }}
                     >
-                      <Check size={14} strokeWidth={3} aria-hidden="true" />
+                      <Check size={12} strokeWidth={3} aria-hidden="true" />
                     </motion.span>
                   )}
                 </AnimatePresence>

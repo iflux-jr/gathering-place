@@ -18,14 +18,14 @@ interface AvatarProps {
   className?: string;
 }
 
-const sizes = { sm: 'h-8 w-8 text-caption', md: 'h-10 w-10 text-small', lg: 'h-14 w-14 text-h3' };
+const sizes = { sm: 'h-7 w-7 text-[0.6875rem]', md: 'h-8 w-8 text-caption', lg: 'h-11 w-11 text-small' };
 
 /** Initials on a pastel circle. Decorative: the name is always shown beside it. */
 export function Avatar({ name, size = 'md', tone, className }: AvatarProps) {
   return (
     <span
       aria-hidden="true"
-      className={cn('grid flex-none place-items-center rounded-full font-heading font-bold text-ink ring-2 ring-white/80', sizes[size], className)}
+      className={cn('grid flex-none place-items-center rounded-full font-body font-bold text-ink', sizes[size], className)}
       style={{ backgroundColor: tone ?? fillFor(name) }}
     >
       {initials(name)}

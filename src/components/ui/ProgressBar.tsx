@@ -22,7 +22,7 @@ export function ProgressBar({ value, max = 100, label, valueText, className, tra
       aria-valuemax={max}
       aria-valuenow={value}
       aria-valuetext={valueText}
-      className={cn('h-2 overflow-hidden rounded-full shadow-inset', !track && 'bg-ink/[.08]', className)}
+      className={cn('h-1.5 overflow-hidden rounded-full', !track && 'bg-ink/[.08]', className)}
       style={track ? { backgroundColor: track } : undefined}
     >
       {/* Scaled rather than resized, so it animates on the compositor */}

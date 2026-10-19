@@ -8,6 +8,8 @@ export interface NavItem {
   to: string;
   label: string;
   icon: LucideIcon;
+  /** Sidebar group heading on desktop */
+  group?: 'General' | 'Records' | 'Manage';
   /** Key used to attach a live count badge, see AppShell */
   badge?: 'pendingDrops' | 'pendingRegistrations';
   /** Match only the exact path (for index routes like /admin) */
@@ -15,14 +17,14 @@ export interface NavItem {
 }
 
 export const ADMIN_NAV: NavItem[] = [
-  { to: '/admin',            label: 'Overview',   icon: Home, end: true },
-  { to: '/admin/registrations', label: 'Sign-ups', icon: Inbox, badge: 'pendingRegistrations' },
-  { to: '/admin/students',   label: 'Students',   icon: Users },
-  { to: '/admin/attendance', label: 'Attendance', icon: ClipboardList },
-  { to: '/admin/classes',    label: 'Classes',    icon: LayoutGrid },
-  { to: '/admin/requests',   label: 'Drop requests', icon: UserMinus, badge: 'pendingDrops' },
-  { to: '/admin/archive',    label: 'Archive',    icon: Archive },
-  { to: '/admin/settings',   label: 'Settings',   icon: Settings },
+  { to: '/admin',            label: 'Overview',   icon: Home, end: true, group: 'General' },
+  { to: '/admin/registrations', label: 'Sign-ups', icon: Inbox, badge: 'pendingRegistrations', group: 'General' },
+  { to: '/admin/requests',   label: 'Drop requests', icon: UserMinus, badge: 'pendingDrops', group: 'General' },
+  { to: '/admin/attendance', label: 'Attendance', icon: ClipboardList, group: 'General' },
+  { to: '/admin/students',   label: 'Students',   icon: Users, group: 'Records' },
+  { to: '/admin/classes',    label: 'Classes & semesters', icon: LayoutGrid, group: 'Records' },
+  { to: '/admin/archive',    label: 'Archive',    icon: Archive, group: 'Records' },
+  { to: '/admin/settings',   label: 'Settings',   icon: Settings, group: 'Manage' },
 ];
 
 /** Shown in the phone bottom bar; the rest go under "More" */
@@ -33,7 +35,7 @@ export const TEACHER_NAV: NavItem[] = [
 ];
 
 /** Admins add students directly, skipping review */
-export const REGISTER_ITEM: NavItem = { to: '/register', label: 'Add student', icon: UserPlus };
+export const REGISTER_ITEM: NavItem = { to: '/register', label: 'Add student', icon: UserPlus, group: 'Manage' };
 
 /** Teachers share the sign-up link and QR code instead of adding students themselves */
 export const INVITE_ITEM: NavItem = { to: '/invite', label: 'Invite students', icon: QrCode };

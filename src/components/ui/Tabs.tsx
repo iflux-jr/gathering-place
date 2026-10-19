@@ -21,7 +21,7 @@ interface TabsProps {
 }
 
 /**
- * Segmented tabs with arrow-key navigation (Radix). A raised pill slides to the active tab.
+ * Segmented tabs with arrow-key navigation (Radix). A tinted block slides to the active tab.
  * Scrolls sideways on narrow screens.
  */
 export function Tabs({ value, onValueChange, items, label, children, className }: TabsProps) {
@@ -30,7 +30,7 @@ export function Tabs({ value, onValueChange, items, label, children, className }
     <TabsPrimitive.Root value={value} onValueChange={onValueChange} className={className}>
       <TabsPrimitive.List
         aria-label={label}
-        className="flex max-w-full gap-1 overflow-x-auto rounded-full bg-ink/[.05] p-1 shadow-inset sm:inline-flex"
+        className="flex max-w-full gap-1 overflow-x-auto rounded-[10px] border border-line bg-white p-1 sm:inline-flex"
       >
         {items.map(item => {
           const active = item.value === value;
@@ -39,7 +39,7 @@ export function Tabs({ value, onValueChange, items, label, children, className }
               key={item.value}
               value={item.value}
               className={cn(
-                'relative inline-flex min-h-[40px] flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 sm:flex-none',
+                'relative inline-flex min-h-[40px] flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-[7px] px-3 sm:min-h-[32px] sm:flex-none',
                 'font-body text-small font-semibold',
                 'focus-visible:outline-none focus-visible:shadow-focus',
                 active ? 'text-ink' : 'text-muted hover:text-ink',
@@ -48,14 +48,14 @@ export function Tabs({ value, onValueChange, items, label, children, className }
               {active && (
                 <motion.span
                   layoutId={indicatorId}
-                  className="absolute inset-0 rounded-full border border-white/80 bg-white shadow-raised"
+                  className="absolute inset-0 rounded-[7px] bg-subtle"
                   transition={spring}
                   aria-hidden="true"
                 />
               )}
               <span className="relative">{item.label}</span>
               {item.count ? (
-                <span className="relative rounded-full bg-accent-500 px-1.5 py-0.5 text-caption font-bold leading-none text-ink tabular-nums">
+                <span className="relative rounded-full bg-accent-500 px-1.5 py-0.5 text-[0.6875rem] font-bold leading-none text-ink tabular-nums">
                   {item.count}
                 </span>
               ) : null}
@@ -70,7 +70,7 @@ export function Tabs({ value, onValueChange, items, label, children, className }
 
 export function TabPanel({ value, children, className }: { value: string; children: ReactNode; className?: string }) {
   return (
-    <TabsPrimitive.Content value={value} className={cn('mt-5 focus-visible:outline-none', className)}>
+    <TabsPrimitive.Content value={value} className={cn('mt-4 focus-visible:outline-none', className)}>
       <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24, ease }}>
         {children}
       </motion.div>

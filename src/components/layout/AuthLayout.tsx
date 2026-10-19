@@ -15,14 +15,14 @@ export function AuthLayout({ title, description, children }: { title: string; de
         <div className="glass flex w-full flex-col justify-between rounded-frame p-10">
           <Logo height={48} />
           <div className="grid gap-6">
-            <p className="font-mono text-label uppercase text-accent-600">Connect. Learn. Grow.</p>
-            <p className="max-w-[15ch] font-heading text-display-lg text-balance">
+            <p className="text-small font-semibold text-accent-600">Connect. Learn. Grow.</p>
+            <p className="max-w-[15ch] font-heading text-display-lg font-bold text-balance">
               Every class, every week, in one place.
             </p>
             <ul className="flex max-w-md flex-wrap gap-2" aria-label="Classes">
               {classes.map(c => (
-                <li key={c.id} className="rounded-full border border-white/70 px-3 py-1.5 text-small font-semibold text-ink"
-                  style={{ backgroundColor: getClassColor(c.id, c.colorKey).surface }}>
+                <li key={c.id} className="rounded-[6px] px-2.5 py-1 text-small font-semibold"
+                  style={{ backgroundColor: getClassColor(c.id, c.colorKey).surface, color: getClassColor(c.id, c.colorKey).strong }}>
                   {c.label}
                 </li>
               ))}

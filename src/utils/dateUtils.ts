@@ -125,3 +125,18 @@ export function getSemesterWeeks(semester: SemesterDates, totalWeeks = SEMESTER_
   }
   return weeks;
 }
+
+/** "12 min ago", "3 hrs ago", "Yesterday", "4 days ago", then a short date */
+export function timeAgo(value: DateLike | number, now: Date = new Date()): string {
+  const date = toDate(value);
+  if (!date) return '';
+  const mins = Math.round((now.getTime() - date.getTime()) / 60_000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs} ${hrs === 1 ? 'hr' : 'hrs'} ago`;
+  const days = Math.round(hrs / 24);
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days} days ago`;
+  return date.toLocaleDateString('en-NG', { day: 'numeric', month: 'short' });
+}

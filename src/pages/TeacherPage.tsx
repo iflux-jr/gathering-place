@@ -86,55 +86,48 @@ function ClassView({ classId, uid, isAdmin }: { classId: string; uid: string; is
   }, [records.value]);
 
   const loadError = config.error || students.error;
+  const hasSide = (config.value === undefined && !loadError) || (!!semester && (status === 'active' || status === 'ended') && !!week);
 
   return (
-    <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] lg:gap-8">
-      <Card className="relative grid gap-5 overflow-hidden lg:sticky lg:top-10">
-        {/* Class colour wash in the corner, so each class feels like its own room */}
-        <span aria-hidden="true" className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-80"
-          style={{ background: `radial-gradient(closest-side, ${color.surface}, transparent)` }} />
-        <div className="relative">
-          <p className="flex items-center gap-2 font-mono text-label uppercase text-accent-600">
-            <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ backgroundColor: color.strong }} />
+    <div className="grid gap-4 lg:gap-5">
+      <header className="flex items-center gap-3">
+        <span aria-hidden="true" className="grid h-10 w-10 flex-none place-items-center rounded-[9px] border"
+          style={{ backgroundColor: color.surface, color: color.strong, borderColor: color.surface }}>
+          <School size={20} />
+        </span>
+        <div className="min-w-0">
+          <h1 className="truncate font-heading text-h1 font-bold md:text-h1-lg">{label}</h1>
+          <p className="truncate text-small text-muted">
             {isAdmin ? 'Your class' : 'Attendance'}
+            {semester?.label && <> · {semester.label}</>}
+            {semester && status === 'active' && currentWeek ? <> · Week {currentWeek} of {totalWeeks}</> : status === 'ended' ? <> · Ended</> : null}
           </p>
-          <h1 className="mt-1.5 font-heading text-h1 md:text-h1-lg">{label}</h1>
-          {semester && (
-            <p className="mt-1 text-small text-muted">
-              {semester.label && <span className="block font-semibold text-ink">{semester.label}</span>}
-              {formatDateShort(semester.startDate)} – {formatDateShort(semester.endDate)}
-            </p>
-          )}
         </div>
+      </header>
 
-        {config.value === undefined && !loadError ? (
-          <Skeleton className="h-28 w-full rounded-md" />
-        ) : semester && (status === 'active' || status === 'ended') && week ? (
-          <>
-            <div className="relative grid gap-2">
-              <div className="flex items-baseline justify-between text-caption font-semibold text-muted">
-                <span>Semester</span>
-                <span className="tabular-nums">{status === 'ended' ? 'Ended' : `Week ${currentWeek} of ${totalWeeks}`}</span>
-              </div>
-              <ProgressBar value={currentWeek ?? totalWeeks} max={totalWeeks} label="Semester progress"
-                valueText={status === 'ended' ? 'Semester ended' : `Week ${currentWeek} of ${totalWeeks}`} />
-            </div>
-            <div className="relative rounded-md border border-white/80 bg-white/60 p-3 shadow-sm">
-              <WeekPicker week={week} lastWeek={lastWeek} totalWeeks={totalWeeks} currentWeek={currentWeek} semester={semester} onChange={setWeek} />
-            </div>
-            {sessionsPerWeek > 1 && (
-              <SessionSwitch
-                sessions={Array.from({ length: sessionsPerWeek }, (_, i) => i + 1).map(n => ({
-                  n,
-                  note: isHolidaySession(config.value, week, n) ? 'no class' : sessionDone.has(n) ? 'sent' : 'to do',
-                }))}
-                value={session}
-                onChange={setSession}
-              />
-            )}
-          </>
-        ) : null}
-      </Card>
+    <div className={cn('grid items-start gap-4 lg:gap-5', hasSide && 'lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)]')}>
+      {config.value === undefined && !loadError ? (
+        <Skeleton className="h-28 w-full rounded-card" />
+      ) : semester && (status === 'active' || status === 'ended') && week ? (
+        <Card className="grid gap-4 lg:sticky lg:top-5">
+          <WeekPicker week={week} lastWeek={lastWeek} totalWeeks={totalWeeks} currentWeek={currentWeek} semester={semester} onChange={setWeek} />
+          <ProgressBar value={currentWeek ?? totalWeeks} max={totalWeeks} label="Semester progress"
+            valueText={status === 'ended' ? 'Semester ended' : `Week ${currentWeek} of ${totalWeeks}`} />
+          {sessionsPerWeek > 1 && (
+            <SessionSwitch
+              sessions={Array.from({ length: sessionsPerWeek }, (_, i) => i + 1).map(n => ({
+                n,
+                note: isHolidaySession(config.value, week, n) ? 'No class' : sessionDone.has(n) ? 'Sent' : 'To do',
+              }))}
+              value={session}
+              onChange={setSession}
+            />
+          )}
+          {semester && (
+            <p className="text-caption text-muted">{formatDateShort(semester.startDate)} to {formatDateShort(semester.endDate)}</p>
+          )}
+        </Card>
+      ) : null}
 
       <div className="min-w-0">
         {loadError ? (
@@ -179,29 +172,30 @@ function ClassView({ classId, uid, isAdmin }: { classId: string; uid: string; is
         )}
       </div>
     </div>
+    </div>
   );
 }
 
-/** Session 1 / Session 2 segmented switch with a sliding pill */
+/** Session 1 / Session 2 segmented control */
 function SessionSwitch({ sessions, value, onChange }: { sessions: { n: number; note: string }[]; value: number; onChange: (n: number) => void }) {
   return (
-    <div role="group" aria-label="Session" className="relative grid auto-cols-fr grid-flow-col gap-1 rounded-[18px] bg-ink/[.06] p-1 shadow-inset">
+    <div role="group" aria-label="Session" className="grid auto-cols-fr grid-flow-col gap-1 rounded-[10px] border border-line bg-white p-1">
       {sessions.map(({ n, note }) => {
         const active = n === value;
         return (
           <button key={n} type="button" aria-pressed={active} onClick={() => onChange(n)}
             className={cn(
-              'relative grid min-h-[52px] place-items-center rounded-[14px] px-2 py-1.5 text-center',
-              'transition-transform duration-150 active:scale-[.97] focus-visible:outline-none focus-visible:shadow-focus',
+              'relative grid min-h-[44px] place-items-center rounded-[7px] px-2 py-1 text-center leading-tight',
+              'focus-visible:outline-none focus-visible:shadow-focus',
               active ? 'text-ink' : 'text-muted hover:text-ink',
             )}>
             {active && (
               <motion.span layoutId="session-pill" transition={spring} aria-hidden="true"
-                className="absolute inset-0 rounded-[14px] border border-white/90 bg-white shadow-raised" />
+                className="absolute inset-0 rounded-[7px] bg-subtle" />
             )}
-            <span className="relative text-small font-bold">Session {n}</span>
-            <span className={cn('relative text-caption font-semibold',
-              note === 'sent' ? 'text-ok-fg' : note === 'no class' ? 'text-info-fg' : 'text-warn-fg')}>{note}</span>
+            <span className="relative text-small font-semibold">Session {n}</span>
+            <span className={cn('relative text-caption font-medium',
+              note === 'Sent' ? 'text-ok-fg' : note === 'No class' ? 'text-info-fg' : 'text-muted')}>{note}</span>
           </button>
         );
       })}

@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from 'react';
 import { cn } from '../../lib/cn';
 
-/** One glass card holding rows split by hairlines. Every list of people or requests uses it. */
+/** One card holding rows split by hairlines. Every list of people or requests uses it. */
 export function ListGroup({ className, ...props }: HTMLAttributes<HTMLUListElement>) {
   return (
     <ul
@@ -12,4 +12,4 @@ export function ListGroup({ className, ...props }: HTMLAttributes<HTMLUListEleme
 }
 
 /** Padding for a row inside a ListGroup, so every list lines up the same */
-export const listRow = 'px-4 py-3.5 sm:px-5';
+export const listRow = 'px-4 py-3';

@@ -14,13 +14,13 @@ interface StateProps {
 
 function StateFrame({ title, description, action, icon, className, tone, iconTone }: StateProps & { tone: string; iconTone: string }) {
   return (
-    <div className={cn('grid justify-items-center gap-2 rounded-card px-6 py-12 text-center', tone, className)}>
+    <div className={cn('grid justify-items-center gap-1.5 rounded-card px-6 py-10 text-center', tone, className)}>
       {icon && (
-        <div aria-hidden="true" className={cn('mb-2 grid h-14 w-14 place-items-center rounded-full shadow-raised [&_svg]:h-6 [&_svg]:w-6', iconTone)}>
+        <div aria-hidden="true" className={cn('mb-2 grid h-10 w-10 place-items-center rounded-full [&_svg]:h-5 [&_svg]:w-5', iconTone)}>
           {icon}
         </div>
       )}
-      <h3 className="font-heading text-h3 text-ink">{title}</h3>
+      <h3 className="font-heading text-h2 text-ink">{title}</h3>
       {description && <p className="max-w-[46ch] text-small text-muted">{description}</p>}
       {action && <div className="mt-3">{action}</div>}
     </div>
@@ -46,7 +46,7 @@ export function ErrorState({ title = 'This didn’t load', description, onRetry,
         title={title}
         description={description ?? 'Check your connection, then try again.'}
         action={action ?? (onRetry && <Button variant="outline" onClick={onRetry}>Try again</Button>)}
-        tone="border border-bad-fg/15 bg-bad-bg/80"
+        tone="border border-bad-fg/15 bg-bad-bg/70"
         iconTone="bg-white text-bad-fg"
       />
     </div>
@@ -57,7 +57,7 @@ export function ErrorState({ title = 'This didn’t load', description, onRetry,
 export function SuccessState(props: StateProps) {
   return (
     <div role="status">
-      <StateFrame {...props} tone="border border-ok-fg/15 bg-ok-bg/80" iconTone="bg-white text-ok-fg" />
+      <StateFrame {...props} tone="border border-ok-fg/15 bg-ok-bg/70" iconTone="bg-white text-ok-fg" />
     </div>
   );
 }

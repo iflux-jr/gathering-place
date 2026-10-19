@@ -1,12 +1,14 @@
 // src/theme/tokens.js
-// Design tokens: the single source for colour, type, radius, shadow, glass and motion.
+// Design tokens: the single source for colour, type, radius, shadow and motion.
 // Read by tailwind.config.js (utility classes) and by app code that needs raw values
 // (charts, QR codes, the theme-color meta tag, Motion transitions). Plain JS so both can import it.
 //
 // Brand board: Soft Cream #F2E9DF, Orange #E57A06, Brown #5A3825.
-// Contrast notes (WCAG 2.1, checked by scripts against white, cream and the worst-case
-// glass tint): ink is 15:1, muted 6.9:1; orange buttons carry ink text (5.7:1) because
-// white on brand orange is 2.95:1; accent-600 is the orange used for text and focus (5.1:1 on cream).
+// Workspace look: white cards with hairline borders on a light warm-grey canvas, a white
+// sidebar, compact type (14px body). Brown is the primary action colour; orange marks badges,
+// the active nav icon and focus.
+// Contrast notes (WCAG 2.1): ink is 16:1 on white, muted 6.4:1; orange fills carry ink text
+// because white on brand orange is 2.95:1; accent-600 is the orange used for text (5.1:1).
 
 export const brand = {
   cream:  '#F2E9DF',
@@ -17,14 +19,17 @@ export const brand = {
 export const colors = {
   brand,
   // Text and dark fills, warm browns rather than black
-  ink:     { DEFAULT: '#2B1B12', 2: '#3B2417', 3: '#5A3825' },
-  // App background: warm off-white; glass panels float over it
-  canvas:  '#FAF6F1',
+  ink:     { DEFAULT: '#1F1A17', 2: '#3C3531', 3: '#5A3825' },
+  // App background: light warm grey; white cards sit on it
+  canvas:  '#F6F5F3',
   cream:   { DEFAULT: '#F2E9DF', 50: '#FAF6F1', 100: '#F5EEE6' },
   surface: '#FFFFFF',
-  line:    { DEFAULT: '#EADFD3', strong: '#D9C8B6', control: '#9C7F6A' }, // control: input and toggle edges, 3.6:1 on white
-  muted:   '#6B4F3E',   // secondary text, 6.9:1 on white
-  subtle:  '#F3EBE2',   // quiet fills and tracks
+  line:    { DEFAULT: '#ECEAE6', strong: '#E2DFDA', control: '#8F857D' }, // control: input and toggle edges, 3.6:1 on white
+  muted:   '#645C56',   // secondary text, 6.4:1 on white
+  faint:   '#7A726C',   // tertiary text and section labels, 4.8:1 on white
+  subtle:  '#F4EFE9',   // quiet fills, selected nav and segmented controls
+  // Primary action: brand brown with white text (10:1)
+  primary: { DEFAULT: '#5A3825', hover: '#4A2D1E' },
   onDark:  { DEFAULT: '#FFFFFF', muted: '#E2D5C7' },
   // Brand orange. 500 fills buttons (ink text on top), 600 is orange text, links and focus
   accent:  { 50: '#FEF6EC', 100: '#FCE6CC', 300: '#F6B566', 400: '#F09A32', 500: '#E57A06', 600: '#A35300', 700: '#8F4A00' },
@@ -72,50 +77,37 @@ export const fonts = {
   mono:    ['Space Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
 };
 
-/** Type scale: [font-size, { lineHeight, fontWeight?, letterSpacing? }] — mobile sizes; md: steps up in components */
+/** Type scale: [font-size, { lineHeight, fontWeight?, letterSpacing? }]. Compact: 14px body, 22–24px titles */
 export const fontSize = {
-  label:     ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.08em' }],  // 11, mono caps
+  label:     ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.06em' }],  // 11, section labels in caps
   caption:   ['0.75rem',   { lineHeight: '1rem' }],      // 12
-  small:     ['0.875rem',  { lineHeight: '1.3rem' }],    // 14
-  body:      ['1rem',      { lineHeight: '1.6rem' }],    // 16
-  h3:        ['1.0625rem', { lineHeight: '1.5rem',  fontWeight: '650', letterSpacing: '-0.01em' }],  // 17
-  h2:        ['1.25rem',   { lineHeight: '1.75rem', fontWeight: '700', letterSpacing: '-0.015em' }], // 20
-  h1:        ['1.75rem',   { lineHeight: '2.125rem', fontWeight: '750', letterSpacing: '-0.025em' }], // 28
-  display:   ['2.25rem',   { lineHeight: '2.5rem',  fontWeight: '800', letterSpacing: '-0.03em' }],  // 36
-  'h2-lg':   ['1.375rem',  { lineHeight: '1.875rem', fontWeight: '700', letterSpacing: '-0.015em' }], // 22
-  'h1-lg':   ['2.25rem',   { lineHeight: '2.625rem', fontWeight: '750', letterSpacing: '-0.03em' }], // 36
-  'display-lg': ['3rem',   { lineHeight: '3.25rem', fontWeight: '800', letterSpacing: '-0.035em' }], // 48
+  small:     ['0.8125rem', { lineHeight: '1.25rem' }],   // 13, secondary text
+  body:      ['0.875rem',  { lineHeight: '1.35rem' }],   // 14
+  input:     ['1rem',      { lineHeight: '1.5rem' }],    // 16 on phones so iOS doesn't zoom
+  h3:        ['0.9375rem', { lineHeight: '1.35rem', fontWeight: '600', letterSpacing: '-0.005em' }], // 15
+  h2:        ['1rem',      { lineHeight: '1.5rem',  fontWeight: '600', letterSpacing: '-0.01em' }],  // 16, card titles
+  h1:        ['1.25rem',   { lineHeight: '1.75rem', fontWeight: '700', letterSpacing: '-0.02em' }],  // 20
+  display:   ['1.5rem',    { lineHeight: '1.875rem', fontWeight: '700', letterSpacing: '-0.02em' }], // 24, key figures
+  'h2-lg':   ['1.0625rem', { lineHeight: '1.5rem',  fontWeight: '600', letterSpacing: '-0.01em' }],  // 17
+  'h1-lg':   ['1.375rem',  { lineHeight: '1.875rem', fontWeight: '700', letterSpacing: '-0.02em' }], // 22, page titles
+  'display-lg': ['1.75rem', { lineHeight: '2.125rem', fontWeight: '700', letterSpacing: '-0.025em' }], // 28
 };
 
 export const radius = {
-  // controls 14, inner panels 18, cards 24, sheets and floating nav 30
-  xs: '8px', sm: '14px', md: '18px', lg: '24px', xl: '30px',
+  // controls 8, inner panels 9, cards 10, sheets 14
+  xs: '6px', sm: '8px', md: '9px', lg: '10px', xl: '14px',
 };
 
-// Layered, low-opacity shadows tinted with brand brown; never black
+// Cards are flat with a hairline border; shadows only for things that float (menus, dialogs, toasts)
 export const shadow = {
-  sm:    '0 1px 2px rgba(90,56,37,.06), 0 2px 6px rgba(90,56,37,.05)',
-  md:    '0 2px 4px rgba(90,56,37,.04), 0 8px 20px rgba(90,56,37,.08), 0 20px 40px -12px rgba(90,56,37,.10)',
-  lg:    '0 4px 8px rgba(90,56,37,.05), 0 16px 36px rgba(90,56,37,.12), 0 40px 80px -20px rgba(90,56,37,.20)',
-  // Lifted card on hover: a soft orange glow under the usual shadow
-  glow:  '0 2px 4px rgba(90,56,37,.04), 0 14px 32px rgba(90,56,37,.10), 0 0 0 1px rgba(229,122,6,.10), 0 12px 40px -8px rgba(229,122,6,.22)',
-  // Raised (neumorphic) controls: light from above, warm shade below
-  raised: 'inset 0 1px 0 rgba(255,255,255,.9), 0 1px 2px rgba(90,56,37,.08), 0 4px 10px -2px rgba(90,56,37,.10)',
-  // Pressed wells such as segmented-control tracks
-  inset: 'inset 0 1px 2px rgba(90,56,37,.10), inset 0 -1px 0 rgba(255,255,255,.7)',
-  focus: '0 0 0 2px #FFFFFF, 0 0 0 4px #A35300',
-};
-
-/** Frosted panels. Only top-level surfaces blur; anything inside a panel uses a plain fill. */
-export const glass = {
-  fill:      'rgba(255,255,255,.66)',
-  fillStrong:'rgba(255,255,255,.82)',
-  border:    'rgba(255,255,255,.75)',
-  edge:      'rgba(90,56,37,.08)',   // hairline outside the white highlight, so edges stay visible
-  blur:      '18px',
-  blurPhone: '12px',
-  // Where backdrop blur isn't supported the panel is solid
-  fallback:  '#FFFCF8',
+  sm:    '0 1px 2px rgba(31,26,23,.05)',
+  md:    '0 2px 8px -4px rgba(31,26,23,.12)',
+  lg:    '0 12px 32px -12px rgba(31,26,23,.28), 0 2px 6px rgba(31,26,23,.06)',
+  // Hover on a clickable card
+  glow:  '0 4px 12px -6px rgba(31,26,23,.18)',
+  raised: '0 1px 2px rgba(31,26,23,.06)',
+  inset: 'inset 0 1px 2px rgba(31,26,23,.06)',
+  focus: '0 0 0 2px #FFFFFF, 0 0 0 4px #E57A06',
 };
 
 /** Motion: calm and short. Durations in seconds for Motion, ms for CSS. */
