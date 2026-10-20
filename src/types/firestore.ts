@@ -1,6 +1,6 @@
 // src/types/firestore.ts
 // Shapes of the Firestore documents the app reads and writes.
-// See README "Database Schema" for the meaning of each field.
+// See docs/data-model.md for the meaning of each field.
 
 import type { Timestamp } from 'firebase/firestore';
 
