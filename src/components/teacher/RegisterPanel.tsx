@@ -145,7 +145,7 @@ export function RegisterPanel({ classId, uid, week, session, semester, students,
   ) : null;
 
   return (
-    <div className="grid gap-3">
+    <div className="grid grid-cols-1 gap-3">
       <div className="grid grid-cols-3 gap-2" aria-live="polite">
         <Tally value={present} label="Present" dot="bg-ok-solid" />
         <Tally value={absent} label="Absent" dot="bg-bad-solid" />
@@ -155,7 +155,7 @@ export function RegisterPanel({ classId, uid, week, session, semester, students,
       <section className="overflow-hidden rounded-card border border-line bg-white">
         <div className="flex flex-wrap items-center gap-2 px-4 pb-2.5 pt-3">
           <h2 className="font-heading text-h3 font-semibold">Students · {students.length}</h2>
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
             {unmarked > 0 && unmarked < students.length && (
               <Button size="sm" variant="ghost" className="px-2.5" onClick={() => markRest(false)}>
                 <X size={15} aria-hidden="true" /> Rest absent
@@ -201,7 +201,9 @@ export function RegisterPanel({ classId, uid, week, session, semester, students,
           </div>
           {unmarked > 0 && (
             <Button variant="outline" className="flex-none px-3.5" onClick={() => markRest(true)}>
-              {unmarked === students.length ? 'Mark all present' : 'Mark rest present'}
+              {/* Shorter on phones so the bar fits a 360px screen */}
+              <span className="sm:hidden">{unmarked === students.length ? 'All present' : 'Rest present'}</span>
+              <span className="hidden sm:inline">{unmarked === students.length ? 'Mark all present' : 'Mark rest present'}</span>
             </Button>
           )}
           <Button className="flex-none px-4" disabled={unmarked > 0 || (!unsent && (!!submittedAt || waiting))} loading={sending} onClick={submit}>
