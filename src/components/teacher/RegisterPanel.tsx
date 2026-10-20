@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { Avatar, Button, Card, Dialog, EmptyState, Input } from '../ui';
 import { AnimatedNumber, Stagger, StaggerItem } from '../motion';
 import { cn } from '../../lib/cn';
+import { StudentLink } from '../shared/StudentLink';
 import { clearDraft, loadDraft, saveDraft, type Marks } from '../../lib/draft';
 import { submitSessionAttendance } from '../../firebase/attendance';
 import { setHoliday } from '../../firebase/classConfig';
@@ -181,7 +182,7 @@ export function RegisterPanel({ classId, uid, week, session, semester, students,
               <StaggerItem as="li" key={s.id} className="flex min-h-[56px] items-center gap-2.5 border-t border-line py-1.5 pl-4 pr-2">
                 <Avatar name={s.name} size="md" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{s.name}</p>
+                  <p className="truncate font-medium"><StudentLink id={s.id}>{s.name}</StudentLink></p>
                   {changed && <p className="text-caption font-medium text-warn-fg">Changed, not sent</p>}
                 </div>
                 <MarkToggle name={s.name} value={value} onChange={v => mark(s.id, v)} />

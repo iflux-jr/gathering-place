@@ -63,7 +63,7 @@ export function getSemesterStatus(semester: SemesterDates, now: Date = new Date(
   return 'active';
 }
 
-function toDate(value: DateLike | number): Date | null {
+export function toDate(value: DateLike | number): Date | null {
   if (value === null || value === undefined || value === '') return null;
   if (value instanceof Date) return value;
   if (typeof value === 'string') return parseLocalDate(value);

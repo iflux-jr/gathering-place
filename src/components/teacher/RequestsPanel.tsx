@@ -6,6 +6,7 @@ import { cn } from '../../lib/cn';
 import { cancelDropRequest } from '../../firebase/dropRequests';
 import { formatDateShort } from '../../utils/dateUtils';
 import type { DropRequest } from '../../types/firestore';
+import { StudentLink } from '../shared/StudentLink';
 
 export function RequestsPanel({ drops, uid }: { drops: DropRequest[]; uid: string }) {
   const [busy, setBusy] = useState<string | null>(null);
@@ -31,7 +32,7 @@ export function RequestsPanel({ drops, uid }: { drops: DropRequest[]; uid: strin
       {drops.map(r => (
         <li key={r.id} className={cn('grid gap-2', listRow)}>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="font-semibold">{r.studentName}</p>
+            <p className="font-semibold"><StudentLink id={r.studentId}>{r.studentName}</StudentLink></p>
             <StatusPill status={r.status as Status} size="sm" />
           </div>
           {r.reason && <p className="text-small">“{r.reason}”</p>}

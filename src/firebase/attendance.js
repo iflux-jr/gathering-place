@@ -148,11 +148,17 @@ export function subscribeToWeekAttendance(className, semWeek, callback, onError)
 }
 
 /**
- * One-time: a student's attendance this semester, all classes (admin student detail)
+ * One-time: a student's attendance this semester. Admins read every class; a teacher passes
+ * their class, since the rules only let them read that class's records.
+ * @param {string} studentId
+ * @param {string|null} [className]
  */
-export async function getStudentAttendance(studentId) {
-  const snap = await getDocs(query(collection(db, COL), where('studentId', '==', studentId)));
+export async function getStudentAttendance(studentId, className = null) {
+  const filters = [where('studentId', '==', studentId)];
+  if (className) filters.push(where('className', '==', className));
+  const snap = await getDocs(query(collection(db, COL), ...filters));
   return snap.docs
+    .filter(d => !d.data().isHolidaySentinel)
     .map(d => ({ id: d.id, ...d.data() }))
     .sort((a, b) => (b.semesterWeek - a.semesterWeek) || (b.sessionNumber - a.sessionNumber));
 }

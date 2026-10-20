@@ -19,6 +19,7 @@ import { formatPhone } from '../lib/phone';
 import { formatRefCode } from '../lib/refCode';
 import { formatDateShort } from '../utils/dateUtils';
 import type { Registration, RegistrationState } from '../types/firestore';
+import { StudentLink } from '../components/shared/StudentLink';
 
 
 function useRegistrations(status: RegistrationState) {
@@ -228,7 +229,7 @@ function RegistrationSummary({ r }: { r: Registration }) {
   return (
     <div className="grid gap-1.5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-        <h3 className="font-heading text-h3">{r.name}</h3>
+        <h3 className="font-heading text-h3">{r.studentId ? <StudentLink id={r.studentId}>{r.name}</StudentLink> : r.name}</h3>
         <p className="text-caption text-muted">Code {formatRefCode(r.id)}</p>
       </div>
       <p className="text-small tabular-nums">

@@ -168,6 +168,36 @@ export async function getArchivedAttendance(archiveKey, classFilter = null) {
   return records;
 }
 
+/**
+ * A student's past semesters (admin only): every archive that holds them, matched by their
+ * id or phone number (a returning student gets a new id), with their attendance there.
+ */
+export async function getStudentArchiveHistory(student) {
+  const key = student.phoneKey || phoneKey(student.phone);
+  const indexes = await getArchiveIndex();
+  const rows = await Promise.all(indexes.filter(i => i.status !== 'in_progress').map(async idx => {
+    const students = collection(db, 'studentArchives', idx.id, 'students');
+    const [byId, byKey] = await Promise.all([
+      getDoc(doc(students, student.id)),
+      key ? getDocs(query(students, where('phoneKey', '==', key))) : Promise.resolve(null),
+    ]);
+    const archived = byId.exists() ? { id: byId.id, ...byId.data() } : byKey?.docs[0] ? { id: byKey.docs[0].id, ...byKey.docs[0].data() } : null;
+    if (!archived) return null;
+    const recSnap = await getDocs(query(collection(db, 'attendanceArchives', idx.id, 'records'), where('studentId', '==', archived.id)));
+    const records = recSnap.docs.map(d => d.data()).filter(r => !r.isHolidaySentinel && !r.isHoliday && r.present !== null);
+    return {
+      archiveKey: idx.id,
+      classId: idx.classId,
+      semesterLabel: idx.semesterLabel,
+      semesterNumber: idx.semesterNumber,
+      archivedAt: idx.archivedAt,
+      present: records.filter(r => r.present === true).length,
+      counted: records.length,
+    };
+  }));
+  return rows.filter(Boolean);
+}
+
 // ── Internal helper: run a callback in batches of BATCH_SIZE ───────────
 async function batchWrite(items, applyFn) {
   for (let i = 0; i < items.length; i += BATCH_SIZE) {

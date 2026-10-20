@@ -52,6 +52,15 @@ export function subscribeToAllStudents(classFilter, callback, onError) {
 }
 
 /**
+ * Real-time listener for one student (the profile page). Calls back with null once it's gone.
+ */
+export function subscribeToStudent(studentId, callback, onError) {
+  return onSnapshot(doc(db, STUDENTS_COLLECTION, studentId), snap => {
+    callback(snap.exists() ? { id: snap.id, ...snap.data() } : null);
+  }, onError);
+}
+
+/**
  * Get a single student by ID
  * @param {string} studentId
  * @returns {Promise<Object|null>}

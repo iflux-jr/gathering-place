@@ -34,6 +34,8 @@ export interface Student {
   email?: string;
   /** Reference code of the self-registration this student came from */
   registrationId?: string;
+  /** The admin who added this student directly, skipping review */
+  addedBy?: string;
   droppedFrom?: Record<string, { droppedAt: string; droppedBy: string; requestId: string | null } | null>;
 }
 

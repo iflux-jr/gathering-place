@@ -10,6 +10,7 @@ import { cn } from '../../lib/cn';
 import { useShell } from './shell';
 import { useSignOut, useWho } from './account';
 import type { NavItem } from './navigation';
+import { studentPath } from '../../lib/studentPath';
 
 const menuPanel = 'z-50 min-w-[240px] rounded-[10px] border border-line bg-white p-1 text-ink shadow-lg data-[state=open]:animate-fade-in motion-reduce:animate-none';
 const menuItem = 'flex min-h-[44px] cursor-pointer select-none items-center gap-2.5 rounded-[7px] px-3 text-body font-medium outline-none data-[highlighted]:bg-subtle sm:min-h-[36px]';
@@ -151,7 +152,7 @@ export function SearchPalette({ open, onOpenChange }: { open: boolean; onOpenCha
       .slice(0, 8)
       .map(s => ({
         key: `s-${s.id}`,
-        to: shell.isAdmin ? `/admin/students?q=${encodeURIComponent(s.name)}` : '/teacher',
+        to: studentPath(s.id),
         title: s.name,
         sub: s.phone ? `Student · ${s.phone}` : 'Student',
       }));

@@ -300,3 +300,53 @@ export async function addStudentDirect(
   });
   return studentRef.id;
 }
+
+/** One registration, for the profile's "how they joined" (admin only) */
+export async function getRegistration(id: string): Promise<Registration | null> {
+  const snap = await getDoc(doc(db, REGISTRATIONS, id));
+  return snap.exists() ? ({ id: snap.id, ...snap.data() } as Registration) : null;
+}
+
+export type DetailsInput = Pick<DirectInput, 'name' | 'phone' | 'gender' | 'ward' | 'email'>;
+
+/**
+ * Saves an admin's edit to a student's details. A new phone number moves the student's
+ * claim in the phone index, so duplicates stay caught.
+ */
+export async function updateStudentDetails(student: Student, input: DetailsInput): Promise<void> {
+  const key = phoneKey(input.phone);
+  if (!key) throw new RegistrationError('invalid_phone', 'Enter a valid phone number.');
+  const oldKey = student.phoneKey ?? phoneKey(student.phone);
+  if (key !== oldKey) {
+    const conflict = await findPhoneConflict(key);
+    if (conflict && !(conflict.kind === 'student' && conflict.studentId === student.id)) {
+      throw new RegistrationError('duplicate', conflictMessage(conflict));
+    }
+  }
+  const studentRef = doc(db, 'students', student.id);
+  const idxRef = doc(db, PHONE_INDEX, key);
+  const oldRef = oldKey && oldKey !== key ? doc(db, PHONE_INDEX, oldKey) : null;
+  await runTransaction(db, async tx => {
+    const [idxSnap, oldSnap] = await Promise.all([tx.get(idxRef), oldRef ? tx.get(oldRef) : Promise.resolve(null)]);
+    if (idxSnap.exists()) {
+      const entry = idxSnap.data() as PhoneIndexEntry;
+      if (entry.kind !== 'student' || entry.studentId !== student.id) {
+        throw new RegistrationError('duplicate', conflictMessage(entry.kind === 'student'
+          ? { kind: 'student', studentId: entry.studentId }
+          : { kind: 'pending', registrationId: entry.registrationId }));
+      }
+    }
+    tx.update(studentRef, {
+      name:     input.name.trim().replace(/\s+/g, ' '),
+      phone:    formatPhone(key),
+      phoneKey: key,
+      gender:   input.gender || null,
+      ward:     input.ward?.trim() ?? '',
+      email:    input.email?.trim() ?? '',
+    });
+    if (!idxSnap.exists()) tx.set(idxRef, { kind: 'student', studentId: student.id, updatedAt: serverTimestamp() });
+    // Free the old number, but only if this student held it
+    const old = oldSnap?.exists() ? (oldSnap.data() as PhoneIndexEntry) : null;
+    if (oldRef && old?.kind === 'student' && old.studentId === student.id) tx.delete(oldRef);
+  });
+}
