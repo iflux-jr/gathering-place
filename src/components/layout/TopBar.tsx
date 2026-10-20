@@ -198,7 +198,7 @@ export function SearchPalette({ open, onOpenChange }: { open: boolean; onOpenCha
             />
             <kbd className="rounded-[5px] border border-line bg-canvas px-1.5 py-px text-caption text-muted">Esc</kbd>
           </div>
-          <ul id="search-results" role="listbox" ref={listRef} className="overflow-y-auto p-1.5">
+          <ul id="search-results" role="listbox" ref={listRef} className="scrollbar-quiet overflow-y-auto p-1.5">
             {hits.length === 0 && <li className="px-3 py-6 text-center text-small text-muted">Nothing matches “{q}”.</li>}
             {hits.map((h, i) => (
               <li key={h.key} id={`search-hit-${i}`} data-i={i} role="option" aria-selected={i === active}

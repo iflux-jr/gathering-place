@@ -66,7 +66,7 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
                         <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                       </DialogPrimitive.Close>
                     </div>
-                    <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
+                    <div className="scrollbar-quiet min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
                     {footer && (
                       <div className="flex flex-col-reverse gap-2 border-t border-line px-5 py-3 sm:flex-row sm:justify-end">
                         {footer}

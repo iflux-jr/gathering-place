@@ -130,7 +130,7 @@ function ArchiveRow({ entry, open, onToggle }: { entry: ArchiveEntry; open: bool
                 <StatTile label="Present" value={present} />
                 <StatTile label="Attendance" value={counted.length ? `${Math.round((present / counted.length) * 100)}%` : '—'} />
               </div>
-              <ul className="grid max-h-64 gap-1 overflow-y-auto pr-1 text-small">
+              <ul className="scrollbar-quiet grid max-h-64 gap-1 overflow-y-auto pr-1 text-small">
                 {data.students.map(s => (
                   <li key={s.id} className="flex justify-between gap-2 border-b border-line py-1.5 last:border-0">
                     <span className="font-semibold">{s.name}</span>

@@ -96,7 +96,7 @@
   .text-balance { text-wrap: balance; }
   .tabular { font-variant-numeric: tabular-nums; }
 
-  /* Slim scrollbar for side panels: no arrows or track, a soft pill that darkens on hover */
+  /* Slim scrollbar for the sidebar, dialogs and pop-up lists: no arrows or track, a soft pill that darkens on hover */
   .scrollbar-quiet { scrollbar-gutter: stable; }
   /* Firefox; Chromium and Safari use the pseudo-elements below, which give more control */
   @supports not selector(::-webkit-scrollbar) {
