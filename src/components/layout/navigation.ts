@@ -1,7 +1,7 @@
 // Navigation for each role. Routes live in App; this decides what each person sees.
 import {
   Archive, CalendarCheck, ClipboardList, Home, Inbox, LayoutGrid, QrCode, Settings, UserMinus,
-  UserPlus, Users, type LucideIcon,
+  UserPlus, UserRound, Users, type LucideIcon,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -9,33 +9,40 @@ export interface NavItem {
   label: string;
   icon: LucideIcon;
   /** Sidebar group heading on desktop */
-  group?: 'General' | 'Records' | 'Manage';
+  group?: 'General' | 'My class' | 'Records' | 'Support';
   /** Key used to attach a live count badge, see AppShell */
-  badge?: 'pendingDrops' | 'pendingRegistrations';
+  badge?: 'pendingDrops' | 'pendingRegistrations' | 'students';
   /** Match only the exact path (for index routes like /admin) */
   end?: boolean;
 }
 
 export const ADMIN_NAV: NavItem[] = [
   { to: '/admin',            label: 'Overview',   icon: Home, end: true, group: 'General' },
-  { to: '/admin/registrations', label: 'Sign-ups', icon: Inbox, badge: 'pendingRegistrations', group: 'General' },
+  { to: '/admin/registrations', label: 'Registrations', icon: Inbox, badge: 'pendingRegistrations', group: 'General' },
   { to: '/admin/requests',   label: 'Drop requests', icon: UserMinus, badge: 'pendingDrops', group: 'General' },
   { to: '/admin/attendance', label: 'Attendance', icon: ClipboardList, group: 'General' },
-  { to: '/admin/students',   label: 'Students',   icon: Users, group: 'Records' },
+  { to: '/admin/students',   label: 'Students',   icon: Users, badge: 'students', group: 'Records' },
   { to: '/admin/classes',    label: 'Classes & semesters', icon: LayoutGrid, group: 'Records' },
   { to: '/admin/archive',    label: 'Archive',    icon: Archive, group: 'Records' },
-  { to: '/admin/settings',   label: 'Settings',   icon: Settings, group: 'Manage' },
+  { to: '/admin/settings',   label: 'Settings',   icon: Settings, group: 'Support' },
 ];
 
 /** Shown in the phone bottom bar; the rest go under "More" */
 export const ADMIN_PRIMARY = ['/admin', '/admin/registrations', '/admin/students', '/admin/attendance'];
 
+/** Sidebar group order */
+export const NAV_GROUPS = ['General', 'My class', 'Records', 'Support'] as const;
+
+/** The person's own class; the label becomes the class name, e.g. "Computer" */
 export const TEACHER_NAV: NavItem[] = [
-  { to: '/teacher', label: 'My class', icon: CalendarCheck, end: true },
+  { to: '/teacher', label: 'My class', icon: CalendarCheck, end: true, group: 'My class' },
 ];
 
 /** Admins add students directly, skipping review */
-export const REGISTER_ITEM: NavItem = { to: '/register', label: 'Add student', icon: UserPlus, group: 'Manage' };
+export const REGISTER_ITEM: NavItem = { to: '/register', label: 'Add student', icon: UserPlus, group: 'Records' };
 
 /** Teachers share the sign-up link and QR code instead of adding students themselves */
-export const INVITE_ITEM: NavItem = { to: '/invite', label: 'Invite students', icon: QrCode };
+export const INVITE_ITEM: NavItem = { to: '/invite', label: 'Invite students', icon: QrCode, group: 'My class' };
+
+/** Reached from the name menu in the top bar, not the sidebar */
+export const PROFILE_ITEM: NavItem = { to: '/profile', label: 'Profile', icon: UserRound };

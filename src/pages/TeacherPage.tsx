@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarClock, School } from 'lucide-react';
+import { TopBar } from '../components/layout/TopBar';
 import { RegisterPanel } from '../components/teacher/RegisterPanel';
 import { RequestsPanel } from '../components/teacher/RequestsPanel';
 import { RosterPanel } from '../components/teacher/RosterPanel';
@@ -90,7 +91,7 @@ function ClassView({ classId, uid, isAdmin }: { classId: string; uid: string; is
 
   return (
     <div className="grid gap-4 lg:gap-5">
-      <header className="flex items-center gap-3">
+      <header className="flex items-start gap-3">
         <span aria-hidden="true" className="grid h-10 w-10 flex-none place-items-center rounded-[9px] border"
           style={{ backgroundColor: color.surface, color: color.strong, borderColor: color.surface }}>
           <School size={20} />
@@ -103,6 +104,7 @@ function ClassView({ classId, uid, isAdmin }: { classId: string; uid: string; is
             {semester && status === 'active' && currentWeek ? <> · Week {currentWeek} of {totalWeeks}</> : status === 'ended' ? <> · Ended</> : null}
           </p>
         </div>
+        <TopBar className="ml-auto" />
       </header>
 
     <div className={cn('grid items-start gap-4 lg:gap-5', hasSide && 'lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)]')}>

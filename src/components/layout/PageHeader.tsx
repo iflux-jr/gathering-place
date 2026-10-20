@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '../../lib/cn';
+import { TopBar } from './TopBar';
 
 interface PageHeaderProps {
   title: ReactNode;
@@ -11,15 +12,22 @@ interface PageHeaderProps {
   className?: string;
 }
 
+/**
+ * Page title on the left. Inside the signed-in frame on desktop, search, notifications and the
+ * person's name sit on the right of the same row, with any page actions under them.
+ */
 export function PageHeader({ title, eyebrow, description, actions, className }: PageHeaderProps) {
   return (
-    <header className={cn('mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:mb-5', className)}>
-      <div className="min-w-0">
+    <header className={cn('mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between lg:mb-5', className)}>
+      <div className="min-w-0 sm:pt-0.5">
         {eyebrow && <p className="mb-0.5 text-small font-medium text-accent-600">{eyebrow}</p>}
-        <h1 className="font-heading text-h1 text-balance text-ink md:text-h1-lg">{title}</h1>
+        <h1 className="font-heading text-h1 font-bold text-balance text-ink md:text-h1-lg">{title}</h1>
         {description && <p className="mt-0.5 max-w-[72ch] text-small text-muted">{description}</p>}
       </div>
-      {actions && <div className="flex flex-none flex-wrap gap-2">{actions}</div>}
+      <div className="flex flex-none flex-col gap-2 sm:items-end">
+        <TopBar />
+        {actions && <div className="flex flex-wrap gap-2 sm:justify-end">{actions}</div>}
+      </div>
     </header>
   );
 }

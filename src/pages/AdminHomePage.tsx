@@ -3,11 +3,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Activity, AlertTriangle, ArrowRight, Calculator, Check, ClipboardList, Download, Inbox, LayoutGrid, Lock,
-  Send, ToggleRight, TrendingDown, TrendingUp, UserMinus, UserPlus, Users,
+  Activity, AlertTriangle, ArrowRight, Calculator, Check, ClipboardCheck, ClipboardList, Download, LayoutGrid, Lock,
+  MoreHorizontal, Plus, Send, ToggleRight, TrendingDown, TrendingUp, UserMinus, UserPlus, Users,
 } from 'lucide-react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import toast from 'react-hot-toast';
 import { PageHeader } from '../components/layout/PageHeader';
+import { useShell } from '../components/layout/shell';
 import { Avatar, Button, ErrorState, Skeleton, StatTile } from '../components/ui';
 import { subscribeToAllClassConfigs } from '../firebase/classConfig';
 import { countStudentsByClass } from '../firebase/classes';
@@ -16,22 +18,19 @@ import { subscribeToRegistrations } from '../firebase/registrations';
 import { rebuildSummaries, subscribeToSummaries } from '../firebase/summaries';
 import { subscribeToRegistrationStatus } from '../firebase/systemSettings';
 import { subscribeToUsers } from '../firebase/users';
-import { greeting } from '../lib/greeting';
 import { cn } from '../lib/cn';
 import { rollup, type SessionSummary } from '../lib/summaries';
 import { biggestDrop, rate, registersForWeek, weeklyTotals, type WeekTotals } from '../lib/overview';
 import { pickSemester } from '../lib/useSemester';
-import useAuthStore from '../store/authStore';
 import { useActiveClasses, useClassLookup } from '../store/classStore';
 import { timeAgo } from '../utils/dateUtils';
 import type { ClassConfig, DateLike, DropRequest, Registration, UserProfile } from '../types/firestore';
 
-const firstName = (name?: string) => (name || '').trim().split(/\s+/)[0] || 'there';
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+const ms = (d: DateLike) => (d && typeof d === 'object' && 'toMillis' in d ? d.toMillis() : d ? new Date(d as string).getTime() : 0);
 const listJoin = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
 
 export default function AdminHomePage() {
-  const profile = useAuthStore(s => s.profile) as UserProfile | null;
   const classes = useActiveClasses();
   const lookup = useClassLookup();
   const [summaries, setSummaries] = useState<SessionSummary[] | null>(null);
@@ -68,7 +67,11 @@ export default function AdminHomePage() {
   );
   const drop = useMemo(() => biggestDrop(summaries ?? [], configs ?? {}), [summaries, configs]);
 
-  const students = counts ? Object.values(counts).reduce((a, b) => a + b, 0) : null;
+  const all = useShell()?.students;
+  // Each person once, even when they take two classes
+  const students = all ? all.length : counts ? Object.values(counts).reduce((a, b) => a + b, 0) : null;
+  const weekAgo = Date.now() - 7 * 864e5;
+  const joined = (all ?? []).filter(s => ms(s.createdAt) > weekAgo).length;
   const teacherOf = (id: string) => users.find(u => u.assignedClass === id && (u.role === 'teacher' || u.role === 'admin'));
   const setupGaps = configs ? classes.filter(c => !configs[c.id]?.semester?.startDate || !teacherOf(c.id)) : [];
 
@@ -78,19 +81,17 @@ export default function AdminHomePage() {
   return (
     <>
       <PageHeader
-        eyebrow={`${greeting()}, ${firstName(profile?.name)}`}
         title="Overview"
         description={[
           new Date().toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'long' }),
           semester?.label,
-          week && semester ? `Week ${week} of ${semester.weeks}` : null,
         ].filter(Boolean).join(' · ')}
       />
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
         <StatTile label="Students" icon={<Users />} value={students ?? '…'} to="/admin/students"
-          sub={`Across ${plural(classes.length, 'class', 'classes')}`} />
+          sub={joined ? <><span className="inline-flex items-center gap-0.5 font-semibold text-ok-fg"><TrendingUp aria-hidden="true" />+{joined}</span>&nbsp;joined this week</> : `Across ${plural(classes.length, 'class', 'classes')}`} />
         <StatTile label="Attendance" icon={<ClipboardList />} value={stats.overall === null ? '—' : stats.overall} suffix="%" to="/admin/attendance"
           sub={change === null ? 'This semester' : (
             <>
@@ -101,15 +102,15 @@ export default function AdminHomePage() {
               since week {firstWeek.week}
             </>
           )} />
-        <StatTile label="Sign-ups" icon={<UserPlus />} value={signups.length} to="/admin/registrations"
-          sub={signups.length ? `Oldest ${timeAgo(signups[0].createdAt).toLowerCase()}` : 'All caught up'} />
-        <StatTile label="Registers" icon={<Send />} to="/admin/attendance"
+        <StatTile label={<><span className="sm:hidden">Sign-ups</span><span className="hidden sm:inline">Sign-ups to review</span></>} icon={<UserPlus />} value={signups.length} to="/admin/registrations"
+          sub={signups.length ? <><b className="font-semibold text-ink">{signups.length}</b>&nbsp;ready to accept</> : 'All caught up'} />
+        <StatTile label="Registers sent" icon={<Send />} to="/admin/attendance"
           value={registers ? <>{registers.sent}<span className="text-h2 font-semibold text-faint"> / {registers.expected}</span></> : '—'}
           sub={!registers ? 'No semester running' : registers.waiting.length
-            ? <><b className="font-semibold text-warn-fg">{registers.waiting.length}</b> waiting this week</>
+            ? <><b className="font-semibold text-warn-fg">{registers.waiting.length}</b>&nbsp;still waiting</>
             : 'All sent this week'} />
         <StatTile label="Drop requests" icon={<UserMinus />} value={drops.length} to="/admin/requests"
-          className="col-span-2 md:col-span-1"
+          className="col-span-2 md:col-span-1 lg:col-span-1"
           sub={drops.length ? listJoin([...new Set(drops.map(d => lookup.label(d.className)))]) : 'None waiting'} />
       </div>
 
@@ -117,24 +118,22 @@ export default function AdminHomePage() {
         <div className="grid gap-3">
           {/* Quick actions */}
           <section aria-labelledby="qa-heading" className="glass rounded-card p-4">
-            <h2 id="qa-heading" className="text-h2">Quick actions</h2>
-            <p className="text-small text-muted">The jobs you do most, one click away.</p>
+            <CardHead id="qa-heading" title="Quick actions" sub="The jobs you do most, one click away."
+              menu={[{ to: '/admin/settings', label: 'Settings' }, { to: '/register', label: 'Add a student' }]} />
             <div className="mt-3 grid grid-cols-2 gap-2.5 md:grid-cols-4">
-              <ActionTile to="/admin/registrations" tone="sky" icon={<Inbox />} title="Review sign-ups"
+              <ActionTile to="/admin/registrations" tone="sky" icon={<UserPlus />} title="Review sign-ups"
                 sub={signups.length ? `${signups.length} waiting for you` : 'Nothing waiting'} />
               <ActionTile to="/admin/attendance" tone="lilac" icon={<Download />} title="Export data" sub="Attendance as a CSV" />
-              <ActionTile to="/admin/classes" tone="mint" icon={<LayoutGrid />} title="Manage classes" sub="Teachers and semesters" />
+              <ActionTile to="/admin/classes" tone="mint" icon={<Plus />} title="Add a class" sub="Teacher and sessions" />
               <ActionTile to="/admin/settings" tone="butter" icon={<ToggleRight />}
-                title={regOpen ? 'Sign-ups are open' : 'Sign-ups are closed'} sub={regOpen ? 'Close them in Settings' : 'Open them in Settings'} />
+                title={regOpen ? 'Close sign-ups' : 'Open sign-ups'} sub={regOpen ? 'The form is live now' : 'The form is closed now'} />
             </div>
           </section>
 
           {/* Attendance chart */}
           <section aria-labelledby="trend-heading" className="glass grid gap-3 rounded-card p-4">
-            <div>
-              <h2 id="trend-heading" className="text-h2">Attendance this semester</h2>
-              <p className="text-small text-muted">Students present and marked each week, all classes together.</p>
-            </div>
+            <CardHead id="trend-heading" title="Attendance this semester" sub="Students marked and present each week, all classes together."
+              menu={[{ to: '/admin/attendance', label: 'Open attendance' }, { to: '/admin/students', label: 'See all students' }]} />
             {error ? (
               <ErrorState className="py-8" description="Check your connection and try again." onRetry={() => window.location.reload()} />
             ) : loading ? (
@@ -149,7 +148,7 @@ export default function AdminHomePage() {
               <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_200px]">
                 <WeekChart weeks={weeks.slice(-12)} />
                 <div className="grid content-start gap-3">
-                  <ThisWeek weeks={weeks} />
+                  <ThisWeek weeks={weeks} current={week} />
                   <WorthALook drop={drop} label={drop ? lookup.label(drop.classId) : ''} />
                 </div>
               </div>
@@ -167,7 +166,7 @@ export default function AdminHomePage() {
         </div>
 
         <div className="grid gap-3">
-          <ActivityFeed signups={signups} drops={drops} label={lookup.label} />
+          <ActivityFeed signups={signups} drops={drops} sent={summaries ?? []} users={users} label={lookup.label} />
           <NeedsAttention
             regOpen={regOpen}
             setup={setupGaps.map(c => ({ id: c.id, label: c.label, noSemester: !configs?.[c.id]?.semester?.startDate, noTeacher: !teacherOf(c.id) }))}
@@ -176,6 +175,37 @@ export default function AdminHomePage() {
         </div>
       </div>
     </>
+  );
+}
+
+/** Card title and line under it, with a "…" menu of related pages on the right */
+function CardHead({ id, title, sub, menu }: { id: string; title: string; sub?: string; menu?: { to: string; label: string }[] }) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="min-w-0 flex-1">
+        <h2 id={id} className="text-h2 font-semibold">{title}</h2>
+        {sub && <p className="text-small text-muted">{sub}</p>}
+      </div>
+      {menu && menu.length > 0 && (
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger aria-label={`${title}: more`}
+            className="grid h-8 w-8 flex-none place-items-center rounded-[8px] border border-line bg-white text-muted hover:text-ink focus-visible:outline-none focus-visible:shadow-focus">
+            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content align="end" sideOffset={6}
+              className="z-50 min-w-[190px] rounded-[10px] border border-line bg-white p-1 text-ink shadow-lg data-[state=open]:animate-fade-in">
+              {menu.map(m => (
+                <DropdownMenu.Item key={m.to} asChild
+                  className="flex min-h-[40px] cursor-pointer select-none items-center rounded-[7px] px-3 text-body font-medium outline-none data-[highlighted]:bg-subtle sm:min-h-[34px]">
+                  <Link to={m.to}>{m.label}</Link>
+                </DropdownMenu.Item>
+              ))}
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
+      )}
+    </div>
   );
 }
 
@@ -188,7 +218,7 @@ const TILE_TONES = {
 
 function ActionTile({ to, tone, icon, title, sub }: { to: string; tone: keyof typeof TILE_TONES; icon: ReactNode; title: string; sub: string }) {
   return (
-    <Link to={to} className={cn('lift flex min-h-[96px] flex-col justify-between gap-3 rounded-md border p-3 focus-visible:outline-none focus-visible:shadow-focus', TILE_TONES[tone])}>
+    <Link to={to} className={cn('lift flex min-h-[112px] flex-col justify-between gap-4 rounded-[10px] border p-3.5 focus-visible:outline-none focus-visible:shadow-focus', TILE_TONES[tone])}>
       <span aria-hidden="true" className="ti grid h-[30px] w-[30px] place-items-center rounded-[7px] border bg-white [&_svg]:h-4 [&_svg]:w-4">{icon}</span>
       <span>
         <span className="block text-body font-semibold leading-snug text-ink">{title}</span>
@@ -281,26 +311,34 @@ function WeekChart({ weeks }: { weeks: WeekTotals[] }) {
   );
 }
 
-function ThisWeek({ weeks }: { weeks: WeekTotals[] }) {
+function ThisWeek({ weeks, current }: { weeks: WeekTotals[]; current: number | null }) {
   const cur = weeks[weeks.length - 1], prev = weeks[weeks.length - 2];
   const absent = (w?: WeekTotals) => (w ? w.marked - w.present : 0);
-  const delta = (a: number, b?: number) => {
+  const delta = (a: number, b: number | undefined, goodUp: boolean) => {
     if (b === undefined) return null;
     const d = a - b;
-    return d === 0 ? 'Same as last week' : `${d > 0 ? '+' : '−'}${Math.abs(d)} on last week`;
+    if (d === 0) return <span className="text-faint">Same as last week</span>;
+    const good = d > 0 === goodUp;
+    return (
+      <span className={cn('inline-flex items-center gap-0.5 font-semibold', good ? 'text-ok-fg' : 'text-bad-fg')}
+        title={`${d > 0 ? 'Up' : 'Down'} ${Math.abs(d)} on last week`}>
+        {d > 0 ? <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" /> : <TrendingDown className="h-3.5 w-3.5" aria-hidden="true" />}
+        {d > 0 ? '+' : '−'}{Math.abs(d)}<span className="sr-only"> on last week</span>
+      </span>
+    );
   };
   return (
     <div className="rounded-md border border-line bg-canvas/60 p-3">
-      <h3 className="mb-2 text-body font-semibold">Week {cur.week}</h3>
+      <h3 className="mb-2 text-body font-semibold">{cur.week === current ? 'This week' : `Week ${cur.week}`}</h3>
       <div className="grid grid-cols-2 gap-2">
         {[
-          { label: 'Present', value: cur.present, d: delta(cur.present, prev?.present) },
-          { label: 'Absent', value: absent(cur), d: delta(absent(cur), prev ? absent(prev) : undefined) },
+          { label: 'Present', value: cur.present, d: delta(cur.present, prev?.present, true) },
+          { label: 'Absent', value: absent(cur), d: delta(absent(cur), prev ? absent(prev) : undefined, false) },
         ].map(t => (
           <div key={t.label} className="rounded-[7px] border border-line bg-white p-2">
             <span className="block text-caption text-muted">{t.label}</span>
             <b className="block text-h1 tabular-nums">{t.value}</b>
-            {t.d && <span className="block text-[0.6875rem] leading-tight text-faint">{t.d}</span>}
+            {t.d && <span className="block text-caption leading-tight">{t.d}</span>}
           </div>
         ))}
       </div>
@@ -328,27 +366,41 @@ function WorthALook({ drop, label }: { drop: ReturnType<typeof biggestDrop>; lab
 
 interface FeedItem { key: string; when: DateLike; name: string; text: ReactNode; meta: ReactNode; icon: ReactNode; to: string }
 
-function ActivityFeed({ signups, drops, label }: { signups: Registration[]; drops: DropRequest[]; label: (id: string) => string }) {
-  const ms = (d: DateLike) => (d && typeof d === 'object' && 'toMillis' in d ? d.toMillis() : d ? new Date(d as string).getTime() : 0);
+function ActivityFeed({ signups, drops, sent, users, label }: {
+  signups: Registration[]; drops: DropRequest[]; sent: SessionSummary[]; users: UserProfile[]; label: (id: string) => string;
+}) {
+  const who = (uid: string) => users.find(u => u.id === uid)?.name;
+  const recent = (sent as (SessionSummary & { updatedAt?: DateLike })[])
+    .filter(r => r.updatedAt && Date.now() - ms(r.updatedAt) < 14 * 864e5)
+    .sort((a, b) => ms(b.updatedAt ?? null) - ms(a.updatedAt ?? null))
+    .slice(0, 4);
   const items: FeedItem[] = [
+    ...recent.map(r => {
+      const name = who(r.markedBy) ?? 'A teacher';
+      return {
+        key: `s-${r.classId}-${r.semesterWeek}-${r.sessionNumber}`, when: r.updatedAt ?? null, name, to: '/admin/attendance',
+        text: <><b className="font-semibold">{name}</b> sent the {label(r.classId)} register for week {r.semesterWeek}{r.sessionNumber > 1 ? `, session ${r.sessionNumber}` : ''}</>,
+        meta: `${r.present} of ${r.total} present`, icon: <ClipboardCheck aria-hidden="true" />,
+      };
+    }),
     ...signups.map(r => ({
       key: `r-${r.id}`, when: r.createdAt, name: r.name, to: '/admin/registrations',
       text: <><b className="font-semibold">{r.name}</b> signed up for {listJoin(r.classes.map(label))}</>,
       meta: <>{r.ward ? `${r.ward} · ` : ''}{r.id}</>, icon: <UserPlus aria-hidden="true" />,
     })),
     ...drops.map(d => ({
-      key: `d-${d.id}`, when: d.requestedAt, name: d.studentName, to: '/admin/requests',
-      text: <>Drop requested for <b className="font-semibold">{d.studentName}</b> from {label(d.className)}</>,
+      key: `d-${d.id}`, when: d.requestedAt, name: who(d.requestedBy) ?? d.studentName, to: '/admin/requests',
+      text: <><b className="font-semibold">{who(d.requestedBy) ?? 'A teacher'}</b> asked to drop {d.studentName} from {label(d.className)}</>,
       meta: d.reason ? `“${d.reason}”` : 'No reason given', icon: <UserMinus aria-hidden="true" />,
     })),
   ].sort((a, b) => ms(b.when) - ms(a.when)).slice(0, 4);
 
   return (
     <section aria-labelledby="feed-heading" className="glass rounded-card p-4">
-      <h2 id="feed-heading" className="text-h2">Latest activity</h2>
-      <p className="text-small text-muted">New sign-ups and drop requests.</p>
+      <CardHead id="feed-heading" title="Activity" sub="Latest registers, sign-ups and requests."
+        menu={[{ to: '/admin/registrations', label: 'All sign-ups' }, { to: '/admin/requests', label: 'All drop requests' }, { to: '/admin/attendance', label: 'All registers' }]} />
       {items.length === 0 ? (
-        <p className="mt-3 flex items-center gap-2 text-small text-muted"><Check className="h-4 w-4 text-ok-fg" aria-hidden="true" />Nothing new is waiting.</p>
+        <p className="mt-3 flex items-center gap-2 text-small text-muted"><Check className="h-4 w-4 text-ok-fg" aria-hidden="true" />Nothing new in the last two weeks.</p>
       ) : (
         <ul className="mt-3 grid gap-2.5">
           {items.map(i => (
@@ -374,24 +426,32 @@ function NeedsAttention({ regOpen, setup, waiting }: {
   setup: { id: string; label: string; noSemester: boolean; noTeacher: boolean }[];
   waiting: { classId: string; session: number; label: string; sessions: number }[];
 }) {
+  const [snoozed, setSnoozed] = useState<string[]>(readSnoozed);
+  const snooze = (key: string) => {
+    const next = [...snoozed, key];
+    setSnoozed(next);
+    try { localStorage.setItem(SNOOZE_KEY, JSON.stringify({ day: today(), keys: next })); } catch { /* no storage: hidden until reload */ }
+  };
   const notes: ReactNode[] = [];
-  if (setup.length) {
+  if (setup.length && !snoozed.includes('setup')) {
     const one = setup[0];
     const what = (c: typeof one) => (c.noSemester && c.noTeacher ? 'a teacher and a semester' : c.noSemester ? 'a semester' : 'a teacher');
     notes.push(
       <Note key="setup" tone="warn" tag="Priority" icon={<AlertTriangle />}
         title={setup.length === 1 ? `${one.label} can’t take a register yet` : `${setup.length} classes aren’t set up`}
         body={setup.length === 1 ? `Add ${what(one)} to open it.` : `${listJoin(setup.map(c => c.label))} need a teacher or a semester.`}
-        action={<Link to="/admin/classes" className={noteBtn.warn}><LayoutGrid aria-hidden="true" />Set up {setup.length === 1 ? 'class' : 'classes'}</Link>} />,
+        action={<Link to="/admin/classes" className={noteBtn.warn}><LayoutGrid aria-hidden="true" />Set up {setup.length === 1 ? 'class' : 'classes'}</Link>}
+        onLater={() => snooze('setup')} />,
     );
   }
-  if (waiting.length) {
+  if (waiting.length && !snoozed.includes('unsent')) {
     const names = [...new Set(waiting.map(w => (w.sessions > 1 ? `${w.label} (session ${w.session})` : w.label)))];
     notes.push(
-      <Note key="unsent" tone="pink" tag="This week" icon={<Send />}
+      <Note key="unsent" tone="pink" tag="Attention" icon={<Send />}
         title={`${plural(waiting.length, 'register')} not sent yet`}
         body={`${listJoin(names)} ${waiting.length === 1 ? 'is' : 'are'} still waiting.`}
-        action={<Link to="/admin/attendance" className={noteBtn.pink}><ClipboardList aria-hidden="true" />View registers</Link>} />,
+        action={<Link to="/admin/attendance" className={noteBtn.pink}><ClipboardList aria-hidden="true" />View registers</Link>}
+        onLater={() => snooze('unsent')} />,
     );
   }
   if (!regOpen) {
@@ -401,13 +461,24 @@ function NeedsAttention({ regOpen, setup, waiting }: {
     );
   }
   return (
-    <section aria-labelledby="needs-heading" className="glass grid gap-2 rounded-card p-4">
-      <h2 id="needs-heading" className="text-h2">Needs attention</h2>
+    <section aria-labelledby="needs-heading" className="glass grid gap-2.5 rounded-card p-4">
+      <CardHead id="needs-heading" title="Needs attention"
+        menu={[{ to: '/admin/classes', label: 'Classes & semesters' }, { to: '/admin/settings', label: 'Settings' }]} />
       {notes.length ? notes : (
         <p className="flex items-center gap-2 text-small text-muted"><Check className="h-4 w-4 text-ok-fg" aria-hidden="true" />Every class is set up and every register is in.</p>
       )}
     </section>
   );
+}
+
+/** "Remind me later" hides a note on this device until tomorrow */
+const SNOOZE_KEY = 'gp.overview.snoozed';
+const today = () => new Date().toDateString();
+function readSnoozed(): string[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(SNOOZE_KEY) ?? 'null') as { day: string; keys: string[] } | null;
+    return v && v.day === today() ? v.keys : [];
+  } catch { return []; }
 }
 
 const noteBtn = {
@@ -421,7 +492,9 @@ const noteTone = {
   neutral: 'border-line bg-canvas [&_.ni]:text-muted',
 };
 
-function Note({ tone, tag, icon, title, body, action }: { tone: keyof typeof noteTone; tag?: string; icon: ReactNode; title: string; body: string; action: ReactNode }) {
+function Note({ tone, tag, icon, title, body, action, onLater }: {
+  tone: keyof typeof noteTone; tag?: string; icon: ReactNode; title: string; body: string; action: ReactNode; onLater?: () => void;
+}) {
   return (
     <div className={cn('grid gap-1 rounded-md border px-3 py-2.5', noteTone[tone])}>
       <p className="flex items-start gap-2 text-body font-semibold">
@@ -430,7 +503,15 @@ function Note({ tone, tag, icon, title, body, action }: { tone: keyof typeof not
         {tag && <span className="ni text-[0.6875rem] font-semibold">{tag}</span>}
       </p>
       <p className="ml-[23px] text-small text-ink-2">{body}</p>
-      <div className="ml-[23px] mt-1">{action}</div>
+      <div className="ml-[23px] mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+        {action}
+        {onLater && (
+          <button type="button" onClick={onLater}
+            className="min-h-[32px] rounded-md text-small font-medium text-ink-2 hover:text-ink hover:underline focus-visible:outline-none focus-visible:shadow-focus">
+            Remind me later
+          </button>
+        )}
+      </div>
     </div>
   );
 }

@@ -30,6 +30,7 @@ const SettingsPage       = lazy(() => import('./pages/SettingsPage'));
 const JoinPage           = lazy(() => import('./pages/JoinPage'));
 const StatusPage         = lazy(() => import('./pages/StatusPage'));
 const TeacherPage        = lazy(() => import('./pages/TeacherPage'));
+const ProfilePage        = lazy(() => import('./pages/ProfilePage'));
 const NotFoundPage       = lazy(() => import('./pages/NotFoundPage'));
 const StyleGuidePage     = lazy(() => import('./pages/StyleGuidePage'));
 
@@ -65,6 +66,7 @@ export default function App() {
           <Route element={<AppShell />}>
             <Route path="/teacher" element={<TeacherPage />} />
             <Route path="/invite"  element={<InvitePage />} />
+            <Route path="/profile" element={<ProfilePage />} />
 
             <Route element={<AdminRoute />}>
               <Route path="/register" element={<AddStudentPage />} />

@@ -1,7 +1,7 @@
 // src/pages/StudentsPage.tsx — every active student, with search, class filter, export and
 // a detail view that loads one student's attendance on demand.
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Download, Phone, Search, UserMinus, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -21,7 +21,10 @@ export default function StudentsPage() {
   const classes = useActiveClasses();
   const [students, setStudents] = useState<Student[] | null>(null);
   const [error, setError] = useState(false);
-  const [search, setSearch] = useState('');
+  // Search in the top bar links here with ?q=name
+  const [params] = useSearchParams();
+  const [search, setSearch] = useState(() => params.get('q') ?? '');
+  useEffect(() => { const q = params.get('q'); if (q !== null) setSearch(q); }, [params]);
   const [classFilter, setClassFilter] = useState('');
   const [open, setOpen] = useState<Student | null>(null);
 

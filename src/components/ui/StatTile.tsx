@@ -4,7 +4,7 @@ import { cn } from '../../lib/cn';
 import { AnimatedNumber } from '../motion';
 
 interface StatTileProps {
-  label: string;
+  label: ReactNode;
   /** A number counts up on first show; text (e.g. "—") shows as is */
   value: ReactNode;
   /** Appended to a counted number, e.g. "%" */
