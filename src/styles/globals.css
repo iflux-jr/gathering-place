@@ -1,4 +1,6 @@
-/* src/styles/globals.css — colours, type and components come from src/theme/tokens.js via Tailwind */
+/* src/styles/globals.css — colours, type and radii come from src/theme/tokens.js via Tailwind.
+   This file adds what utilities can't express well: the card surfaces, hover states and
+   the shimmer used by skeletons. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,16 +10,20 @@
     font-family: theme('fontFamily.body');
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
     background-color: theme('colors.canvas');
     color: theme('colors.ink.DEFAULT');
+    font-size: 0.875rem;
+    line-height: 1.45;
     min-height: 100vh;
   }
 
   * { box-sizing: border-box; }
+
+  ::selection { background: theme('colors.accent.100'); color: theme('colors.ink.DEFAULT'); }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
@@ -29,6 +35,64 @@
   }
 }
 
+@layer components {
+  /* Page background: plain light warm grey. Kept as a component so the frame can drop it in print. */
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: theme('colors.canvas');
+  }
+
+  /* ── Surfaces ──
+     .glass is the standard card: white, a hairline border, no shadow. The name stays from the
+     earlier design so every page picks up the new look. .glass-strong is for things that float
+     above the page (menus, dialogs, sheets). */
+  .glass {
+    background-color: #FFFFFF;
+    border: 1px solid theme('colors.line.DEFAULT');
+  }
+  .glass-strong {
+    background-color: #FFFFFF;
+    border: 1px solid theme('colors.line.DEFAULT');
+    box-shadow: theme('boxShadow.lg');
+  }
+
+  /* Clickable cards: the border darkens and a soft shadow appears on hover */
+  .lift {
+    transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  }
+  @media (hover: hover) {
+    .lift:hover { border-color: theme('colors.line.strong'); box-shadow: theme('boxShadow.glow'); }
+  }
+
+  /* Skeleton shimmer: a light band slides across with transform */
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+    background-color: rgba(31,26,23,.06);
+  }
+  .shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.7), rgba(255,255,255,0));
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+  @keyframes shimmer { to { transform: translateX(100%); } }
+  @media (prefers-reduced-motion: reduce) {
+    .shimmer::after { animation: none; opacity: 0; }
+  }
+
+  /* Brand orange fill for progress and the latest bar in a chart */
+  .bg-primary-gradient {
+    background-color: theme('colors.accent.500');
+  }
+}
+
 @layer utilities {
   .text-balance { text-wrap: balance; }
+  .tabular { font-variant-numeric: tabular-nums; }
 }

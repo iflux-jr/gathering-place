@@ -37,6 +37,10 @@ describe('design token contrast (WCAG AA)', () => {
     expect(contrast(colors.ink.DEFAULT, colors.canvas)).toBeGreaterThanOrEqual(AA);
     expect(contrast(colors.muted, colors.canvas)).toBeGreaterThanOrEqual(AA);
     expect(contrast(colors.muted, WHITE)).toBeGreaterThanOrEqual(AA);
+    expect(contrast(colors.faint, WHITE)).toBeGreaterThanOrEqual(AA);
+    expect(contrast(WHITE, colors.primary.DEFAULT)).toBeGreaterThanOrEqual(AA);
+    expect(contrast(WHITE, colors.primary.hover)).toBeGreaterThanOrEqual(AA);
+    expect(contrast(colors.ink.DEFAULT, colors.subtle)).toBeGreaterThanOrEqual(AA);
     for (const pastel of [colors.butter, colors.sky, colors.lilac, colors.pink, colors.mint, colors.peach, colors.clay]) {
       expect(contrast(colors.ink.DEFAULT, pastel)).toBeGreaterThanOrEqual(AA);
     }

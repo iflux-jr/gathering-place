@@ -1,7 +1,9 @@
 interface ProfileLike { role?: string; assignedClass?: string | null }
 
-/** Where a signed-in person lands: admins (including admin-teachers) on the admin home, teachers on their class */
+/** Older builds remembered which side an admin who also teaches last used; no longer read */
+export const ROLE_KEY = 'gp.role';
+
+/** Where a signed-in person lands: teachers on their class, admins on the admin overview. */
 export function homePathFor(profile: ProfileLike | null | undefined): string {
-  if (!profile) return '/teacher';
-  return profile.role === 'admin' ? '/admin' : '/teacher';
+  return profile?.role === 'admin' ? '/admin' : '/teacher';
 }

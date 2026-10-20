@@ -4,8 +4,8 @@ import { getClassColor } from '../../theme/classes';
 import useClassStore from '../../store/classStore';
 import { colors } from '../../theme/tokens.js';
 
-const chipBase = 'inline-flex items-center gap-1.5 rounded-full border border-line-strong font-body font-medium whitespace-nowrap';
-const chipSizes = { sm: 'px-2.5 py-1 text-caption', md: 'px-3 py-1.5 text-small' };
+const chipBase = 'inline-flex items-center gap-1 rounded-[6px] border border-line-strong font-body font-semibold whitespace-nowrap';
+const chipSizes = { sm: 'px-1.5 py-0.5 text-caption', md: 'px-2 py-0.5 text-small' };
 
 interface ChipProps extends HTMLAttributes<HTMLSpanElement> {
   size?: keyof typeof chipSizes;
@@ -16,7 +16,7 @@ interface ChipProps extends HTMLAttributes<HTMLSpanElement> {
 export function Chip({ size = 'md', tone, className, style, ...props }: ChipProps) {
   return (
     <span
-      className={cn(chipBase, chipSizes[size], !tone && 'bg-surface', className)}
+      className={cn(chipBase, chipSizes[size], !tone && 'bg-white', className)}
       style={tone ? { backgroundColor: tone, ...style } : style}
       {...props}
     />
@@ -34,9 +34,11 @@ export function FilterChip({ selected, className, type = 'button', ...props }: F
       type={type}
       aria-pressed={selected}
       className={cn(
-        chipBase, 'min-h-[36px] px-3.5 text-small transition-colors',
+        chipBase, 'min-h-[36px] rounded-control px-3 text-small transition-colors duration-150 sm:min-h-[32px]',
         'focus-visible:outline-none focus-visible:shadow-focus',
-        selected ? 'border-ink bg-ink text-white' : 'bg-surface text-ink hover:border-ink/40',
+        selected
+          ? 'border-primary bg-primary text-white'
+          : 'bg-white text-ink-2 hover:border-ink/25 hover:text-ink',
         className,
       )}
       {...props}
@@ -93,8 +95,8 @@ interface StatusPillProps {
 export function StatusPill({ status, children, size = 'md', className }: StatusPillProps) {
   const s = STATUS[status];
   return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-full font-body font-medium whitespace-nowrap', chipSizes[size], s.cls, className)}>
-      <span className="h-2 w-2 rounded-full bg-current" aria-hidden="true" />
+    <span className={cn('inline-flex items-center gap-1.5 rounded-[6px] font-body font-semibold whitespace-nowrap', chipSizes[size], s.cls, className)}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
       {children ?? s.label}
     </span>
   );
@@ -108,13 +110,13 @@ interface RoleBadgeProps {
 export function RoleBadge({ role, className }: RoleBadgeProps) {
   if (role === 'admin-teacher') {
     return (
-      <Chip size="sm" className={cn('border-transparent bg-[linear-gradient(90deg,theme(colors.lilac)_50%,theme(colors.mint)_50%)]', className)}>
+      <Chip size="sm" className={cn('border-transparent bg-[linear-gradient(90deg,theme(colors.accent.100)_50%,theme(colors.mint)_50%)]', className)}>
         Admin · Teacher
       </Chip>
     );
   }
   return (
-    <Chip size="sm" tone={role === 'admin' ? colors.lilac : colors.mint} className={cn('border-transparent', className)}>
+    <Chip size="sm" tone={role === 'admin' ? colors.accent[100] : colors.mint} className={cn('border-transparent', className)}>
       {role === 'admin' ? 'Admin' : 'Teacher'}
     </Chip>
   );

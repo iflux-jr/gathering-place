@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Phone, UserMinus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '../../lib/cn';
-import { Button, ClassChip, Dialog, EmptyState, ErrorState, Field, ListGroup, LoadingList, ProgressBar, StatusPill, Textarea, listRow } from '../ui';
+import { StudentLink } from '../shared/StudentLink';
+import { Avatar, Button, ClassChip, Dialog, EmptyState, ErrorState, Field, ListGroup, LoadingList, ProgressBar, StatusPill, Textarea, listRow } from '../ui';
 import { getClassAttendance } from '../../firebase/attendance';
 import { createDropRequest } from '../../firebase/dropRequests';
 import { isHolidaySession } from '../../firebase/classConfig';
@@ -67,8 +68,10 @@ export function RosterPanel({ classId, uid, config, students, drops, canRequestD
           const pending = pendingFor(s.id);
           return (
             <li key={s.id} className={cn('grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px_128px] sm:items-center sm:gap-6', listRow)}>
-              <div className="min-w-0">
-                <p className="truncate font-semibold">{s.name}</p>
+              <div className="flex min-w-0 items-start gap-2.5">
+                <Avatar name={s.name} size="md" className="mt-0.5" />
+                <div className="min-w-0">
+                <p className="truncate font-medium"><StudentLink id={s.id}>{s.name}</StudentLink></p>
                 <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted">
                   {s.phone && (
                     <a href={`tel:${s.phoneKey ? `+${s.phoneKey}` : s.phone}`} className="inline-flex items-center gap-1 underline-offset-4 hover:underline">
@@ -77,6 +80,7 @@ export function RosterPanel({ classId, uid, config, students, drops, canRequestD
                   )}
                   {other.map(c => <ClassChip key={c} classId={c} label={`Also ${classes.label(c)}`} size="sm" />)}
                 </p>
+                </div>
               </div>
               <div className="grid gap-1">
                 <div className="flex justify-between text-small">
@@ -104,7 +108,7 @@ export function RosterPanel({ classId, uid, config, students, drops, canRequestD
   );
 }
 
-function DropDialog({ student, classId, uid, onClose }: { student: Student | null; classId: string; uid: string; onClose: () => void }) {
+export function DropDialog({ student, classId, uid, onClose }: { student: Student | null; classId: string; uid: string; onClose: () => void }) {
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => { if (student) setReason(''); }, [student]);

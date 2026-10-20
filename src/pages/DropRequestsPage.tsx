@@ -14,6 +14,7 @@ import useAuthStore from '../store/authStore';
 import { useClassLookup } from '../store/classStore';
 import { formatDateShort } from '../utils/dateUtils';
 import type { DropRequest, Student, UserProfile } from '../types/firestore';
+import { StudentLink } from '../components/shared/StudentLink';
 
 export default function DropRequestsPage() {
   const uid = useAuthStore(s => s.user?.uid) as string;
@@ -71,7 +72,7 @@ export default function DropRequestsPage() {
         <li key={r.id} className={cn('grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center', listRow)}>
           <div className="grid gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="font-semibold">{r.studentName}</p>
+              <p className="font-semibold"><StudentLink id={r.studentId}>{r.studentName}</StudentLink></p>
               <ClassChip classId={r.className} size="sm" />
               {!actions && <StatusPill status={r.status as Status} size="sm" />}
             </div>

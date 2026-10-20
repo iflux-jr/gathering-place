@@ -1,40 +1,38 @@
-// The signed-in app frame: a dark top bar with the main pages on desktop, and the same
-// bar plus a bottom tab bar on phones, around a light grey canvas.
-import { Suspense, useEffect, useState, type ReactNode } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, LogOut, MoreHorizontal } from 'lucide-react';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import toast from 'react-hot-toast';
+// The signed-in app frame. Desktop: a white sidebar with grouped sections and the semester at
+// the bottom; search, notifications and the person's name sit at the top of each page (TopBar).
+// Phones: a slim header with the same tools and a tab bar along the bottom.
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { CalendarDays, LogOut, MoreHorizontal } from 'lucide-react';
 import { Logo } from '../brand/Logo';
-import { Avatar, Dialog, LoadingList, RoleBadge } from '../ui';
+import { Avatar, Dialog, LoadingList, RoleBadge, buttonVariants } from '../ui';
+import { PageTransition } from '../motion';
 import { cn } from '../../lib/cn';
 import useAuthStore from '../../store/authStore';
-import { logoutUser } from '../../firebase/users';
 import { subscribeToPendingDropRequests } from '../../firebase/dropRequests';
 import { subscribeToPendingRegistrationCount } from '../../firebase/registrations';
+import { subscribeToAllStudents, subscribeToStudentsByClass } from '../../firebase/students';
 import { useClassLabel } from '../../store/classStore';
-import { ADMIN_NAV, ADMIN_PRIMARY, INVITE_ITEM, REGISTER_ITEM, TEACHER_NAV, type NavItem } from './navigation';
+import { semesterRange, useProgrammeSemester } from '../../lib/useSemester';
+import { ADMIN_NAV, ADMIN_PRIMARY, INVITE_ITEM, NAV_GROUPS, PROFILE_ITEM, REGISTER_ITEM, TEACHER_NAV, type NavItem } from './navigation';
+import { ShellContext, type Badges, type ShellState } from './shell';
+import { AccountButton, NotificationsButton, SearchButton, SearchPalette, TopBar } from './TopBar';
+import { useScrolledPast } from '../../lib/useScrolledPast';
+import { useSignOut, useWho } from './account';
+import type { Student } from '../../types/firestore';
 
-type Badges = Partial<Record<NonNullable<NavItem['badge']>, number>>;
-
+/** Admins see the admin sections; anyone with a class also gets it, named after the class */
 function useNavItems() {
   const profile = useAuthStore(s => s.profile);
   const isAdmin = profile?.role === 'admin';
-  const teaches = !!profile?.assignedClass;
-  const classLabel = useClassLabel(profile?.assignedClass ?? '');
-
-  const items: NavItem[] = [];
-  if (isAdmin) items.push(...ADMIN_NAV);
-  if (teaches || !isAdmin) {
-    items.push(...TEACHER_NAV.map(i => (isAdmin && teaches ? { ...i, label: `${classLabel} class` } : i)));
-  }
-  // Admins add students directly; teachers share the sign-up link instead
-  items.push(isAdmin ? REGISTER_ITEM : INVITE_ITEM);
-  if (isAdmin && teaches) items.push(INVITE_ITEM);
-  return { items, isAdmin, teaches };
+  const classId = profile?.assignedClass ?? null;
+  const classLabel = useClassLabel(classId ?? '');
+  const mine = classId ? [...TEACHER_NAV.map(i => ({ ...i, label: classLabel || i.label })), INVITE_ITEM] : [];
+  const items: NavItem[] = isAdmin ? [...ADMIN_NAV, REGISTER_ITEM, ...mine] : (classId ? mine : [...TEACHER_NAV, INVITE_ITEM]);
+  return { items, isAdmin, classId };
 }
 
-function useBadges(isAdmin: boolean): Badges {
+function useBadges(isAdmin: boolean, students: Student[] | null): Badges {
   const [pendingDrops, setPendingDrops] = useState(0);
   const [pendingRegistrations, setPendingRegistrations] = useState(0);
   useEffect(() => {
@@ -44,216 +42,238 @@ function useBadges(isAdmin: boolean): Badges {
     const offRegs = subscribeToPendingRegistrationCount(setPendingRegistrations);
     return () => { offDrops(); offRegs(); };
   }, [isAdmin]);
-  return { pendingDrops, pendingRegistrations };
+  return { pendingDrops, pendingRegistrations, students: isAdmin ? students?.length : undefined };
 }
 
-function BadgeCount({ count, className }: { count?: number; className?: string }) {
+/** Students for search and the sidebar count: everyone for admins, their own class for teachers */
+function useStudents(isAdmin: boolean, classId: string | null) {
+  const [students, setStudents] = useState<Student[] | null>(null);
+  useEffect(() => {
+    setStudents(null);
+    const fail = () => setStudents([]);
+    if (isAdmin) return subscribeToAllStudents(null, setStudents, fail);
+    if (classId) return subscribeToStudentsByClass(classId, setStudents, fail);
+    setStudents([]);
+    return undefined;
+  }, [isAdmin, classId]);
+  return students;
+}
+
+function BadgeCount({ count, neutral, className }: { count?: number; neutral?: boolean; className?: string }) {
   if (!count) return null;
   return (
-    <span className={cn('rounded-full bg-accent-500 px-1.5 py-0.5 text-caption font-semibold leading-none text-ink tabular-nums', className)}>
-      {count}<span className="sr-only"> waiting</span>
+    <span className={cn(
+      'grid h-[18px] min-w-[20px] place-items-center rounded-full px-1.5 text-[0.6875rem] font-bold leading-none tabular-nums',
+      neutral ? 'bg-canvas text-muted' : 'bg-accent-500 text-ink',
+      className,
+    )}>
+      {count}<span className="sr-only">{neutral ? ' in total' : ' waiting'}</span>
     </span>
   );
 }
 
-function useSignOut() {
-  const navigate = useNavigate();
-  return async () => {
-    try {
-      await logoutUser();
-      toast.success('Signed out');
-      navigate('/login', { replace: true });
-    } catch {
-      toast.error('Couldn’t sign out. Check your connection and try again.');
-    }
-  };
-}
-
-function useRole() {
-  const profile = useAuthStore(s => s.profile);
-  const role = profile?.role === 'admin' ? (profile?.assignedClass ? 'admin-teacher' : 'admin') : 'teacher';
-  return { name: profile?.name || 'Signed in', role } as const;
-}
-
 function RoleLine() {
-  const { name, role } = useRole();
+  const { name, role } = useWho();
   return (
-    <div className="flex min-w-0 items-center gap-3">
-      <Avatar name={name} size="sm" />
+    <div className="flex min-w-0 items-center gap-2.5">
+      <Avatar name={name} size="md" className="rounded-[7px] text-white" tone="#5A3825" />
       <div className="min-w-0">
-        <p className="truncate text-small font-semibold">{name}</p>
+        <p className="truncate text-body font-semibold">{name}</p>
         <RoleBadge role={role} className="mt-0.5" />
       </div>
     </div>
   );
 }
 
-const menuPanel = 'z-50 min-w-[220px] rounded-md border border-line bg-surface p-1.5 text-ink shadow-md data-[state=open]:animate-fade-in motion-reduce:animate-none';
-const menuItem = 'flex min-h-[40px] cursor-pointer select-none items-center gap-2.5 rounded-control px-3 text-small font-medium outline-none data-[highlighted]:bg-subtle';
+const isActivePath = (pathname: string, i: NavItem) => (i.end ? pathname === i.to : pathname.startsWith(i.to));
 
-/** Avatar button with the signed-in person, their role and sign out */
-function AccountMenu() {
-  const { name } = useRole();
-  const signOut = useSignOut();
+/** Where the semester stands, under the admin nav */
+function SemesterCard() {
+  const { semester } = useProgrammeSemester();
+  if (!semester) return null;
+  const { week, weeks, status, label } = semester;
+  const current = status === 'ended' ? weeks : week ?? 0;
   return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger
-        className="flex min-h-touch items-center gap-2 rounded-full py-1 pl-1 pr-2 text-white hover:bg-ink-3 focus-visible:outline-none focus-visible:shadow-focus"
-        aria-label={`Account: ${name}`}
-      >
-        <Avatar name={name} size="sm" />
-        <span className="hidden max-w-[12ch] truncate text-small font-medium xl:block">{name}</span>
-        <ChevronDown className="h-4 w-4 text-onDark-muted" aria-hidden="true" />
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content align="end" sideOffset={8} className={menuPanel}>
-          <div className="px-3 py-2.5"><RoleLine /></div>
-          <DropdownMenu.Separator className="my-1 h-px bg-line" />
-          <DropdownMenu.Item className={menuItem} onSelect={signOut}>
-            <LogOut className="h-4 w-4" aria-hidden="true" /> Sign out
-          </DropdownMenu.Item>
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+    <div className="rounded-card border border-[#E8DCCD] bg-cream p-3">
+      <p className="flex items-center gap-2 text-body font-semibold">
+        <CalendarDays className="h-4 w-4 text-accent-600" aria-hidden="true" />
+        {status === 'active' ? `Week ${week} of ${weeks}` : status === 'ended' ? 'Semester ended' : 'Starts soon'}
+      </p>
+      <p className="mt-0.5 text-caption text-[#5E4A3D]">{label} {status === 'ended' ? 'ran' : 'runs'} {semesterRange(semester.semester)}.</p>
+      <div className="mt-2.5 grid gap-[3px]" style={{ gridTemplateColumns: `repeat(${Math.max(weeks, 1)}, minmax(0, 1fr))` }}
+        role="img" aria-label={`Week ${current} of ${weeks}`}>
+        {Array.from({ length: weeks }, (_, i) => (
+          <span key={i} className={cn('h-[5px] rounded-full', i < current - 1 ? 'bg-primary' : i === current - 1 ? 'bg-accent-500' : 'bg-[#E3D3C1]')} />
+        ))}
+      </div>
+      <NavLink to="/admin/classes" className={cn(buttonVariants({ variant: 'primary', size: 'sm' }), 'mt-3 w-full')}>
+        Manage semester
+      </NavLink>
+    </div>
   );
 }
 
-/** Pages that sit under "More" in the desktop bar, to keep it to one line */
-const DESKTOP_MORE = ['/admin/archive', '/admin/settings', '/register', '/invite'];
+function Sidebar({ items, badges, isAdmin }: { items: NavItem[]; badges: Badges; isAdmin: boolean }) {
+  const { pathname } = useLocation();
+  const groups = NAV_GROUPS.map(g => ({ title: g, items: items.filter(i => i.group === g) }));
 
-function TopBar({ items, badges }: { items: NavItem[]; badges: Badges }) {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const isAdminNav = items.some(i => i.to === '/admin');
-  const more = isAdminNav ? items.filter(i => DESKTOP_MORE.includes(i.to)) : [];
-  const main = items.filter(i => !more.includes(i));
-  const isActive = (i: NavItem) => (i.end ? location.pathname === i.to : location.pathname.startsWith(i.to));
-  const moreActive = more.some(isActive);
-
-  const linkClass = (active: boolean) => cn(
-    'relative flex h-16 items-center gap-2 whitespace-nowrap px-2.5 text-small font-medium transition-colors xl:px-3',
-    'focus-visible:outline-none focus-visible:shadow-focus',
-    "after:absolute after:inset-x-2.5 after:bottom-0 after:h-0.5 after:rounded-full after:content-[''] xl:after:inset-x-3",
-    active ? 'text-white after:bg-white' : 'text-onDark-muted hover:text-white after:bg-transparent',
-  );
+  const link = (item: NavItem) => {
+    const active = isActivePath(pathname, item);
+    return (
+      <li key={item.to}>
+        <NavLink
+          to={item.to} end={item.end}
+          className={cn(
+            'flex h-[36px] items-center gap-2.5 rounded-[8px] px-2.5 text-body',
+            'focus-visible:outline-none focus-visible:shadow-focus',
+            active ? 'bg-subtle font-semibold text-ink' : 'text-ink-2 hover:bg-canvas',
+          )}
+        >
+          <item.icon className={cn('h-4 w-4 flex-none', active ? 'text-accent-600' : 'text-muted')} strokeWidth={1.8} aria-hidden="true" />
+          <span className="flex-1 truncate">{item.label}</span>
+          <BadgeCount count={item.badge && badges[item.badge]} neutral={item.badge === 'students'} />
+        </NavLink>
+      </li>
+    );
+  };
 
   return (
-    <header className="sticky top-0 z-30 bg-ink pt-[env(safe-area-inset-top)] text-white print:hidden">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-6 lg:h-16 lg:gap-6 lg:px-8">
-        <NavLink to="/" aria-label="The Gathering Place, home" className="flex-none rounded-md focus-visible:outline-none focus-visible:shadow-focus">
-          <Logo on="dark" height={26} />
-        </NavLink>
-        <nav aria-label="Main" className="hidden min-w-0 flex-1 lg:block">
-          <ul className="flex items-center">
-            {main.map(item => (
-              <li key={item.to}>
-                <NavLink to={item.to} end={item.end} className={({ isActive: a }) => linkClass(a)}>
-                  {item.label === 'Drop requests' ? 'Requests' : item.label}
-                  <BadgeCount count={item.badge && badges[item.badge]} />
-                </NavLink>
-              </li>
-            ))}
-            {more.length > 0 && (
-              <li>
-                <DropdownMenu.Root>
-                  <DropdownMenu.Trigger className={linkClass(moreActive)}>
-                    More <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                  </DropdownMenu.Trigger>
-                  <DropdownMenu.Portal>
-                    <DropdownMenu.Content align="start" sideOffset={4} className={menuPanel}>
-                      {more.map(item => (
-                        <DropdownMenu.Item key={item.to} className={cn(menuItem, isActive(item) && 'bg-subtle')} onSelect={() => navigate(item.to)}>
-                          <item.icon className="h-4 w-4 text-muted" aria-hidden="true" /> {item.label}
-                        </DropdownMenu.Item>
-                      ))}
-                    </DropdownMenu.Content>
-                  </DropdownMenu.Portal>
-                </DropdownMenu.Root>
-              </li>
-            )}
-          </ul>
-        </nav>
-        <div className="ml-auto flex-none"><AccountMenu /></div>
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-[240px] flex-col border-r border-line bg-white px-3 pb-3 pt-5 lg:flex print:hidden">
+      <NavLink to="/" aria-label="The Gathering Place, home" className="mb-6 flex items-center gap-2.5 self-start rounded-md px-1.5 focus-visible:outline-none focus-visible:shadow-focus">
+        <Logo variant="favicon" height={34} />
+        <span className="font-heading text-[1.0625rem] font-bold text-primary">Gathering Place</span>
+      </NavLink>
+      <nav aria-label="Main" className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
+        {groups.map(g => g.items.length > 0 && (
+          <div key={g.title} className="mb-5">
+            <p className="mb-1.5 px-2.5 text-label font-semibold uppercase tracking-[0.04em] text-faint">{g.title}</p>
+            <ul className="grid gap-0.5">{g.items.map(link)}</ul>
+          </div>
+        ))}
+      </nav>
+      {isAdmin && <SemesterCard />}
+    </aside>
+  );
+}
+
+/**
+ * Desktop: once the page has scrolled past its own header, this bar slides down from the top
+ * with the page name, search, notifications and the person's name, and stays until the
+ * page is back at the top.
+ */
+function StickyTopBar({ title }: { title: string }) {
+  const shown = useScrolledPast(88);
+  const ref = useRef<HTMLDivElement>(null);
+  // Out of the tab order and hidden from screen readers while tucked away
+  useEffect(() => { ref.current?.toggleAttribute('inert', !shown); }, [shown]);
+  return (
+    <div ref={ref} aria-hidden={!shown}
+      className={cn(
+        'fixed left-[240px] right-0 top-0 z-20 hidden border-b border-line bg-white/90 backdrop-blur-md lg:block print:hidden',
+        'transition-[transform,opacity,box-shadow] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] motion-reduce:transition-none',
+        shown ? 'translate-y-0 opacity-100 shadow-[0_6px_20px_-12px_rgba(31,26,23,.25)]' : '-translate-y-full opacity-0',
+      )}>
+      <div className="mx-auto flex h-16 w-full max-w-[calc(1320px+64px)] items-center gap-3 px-8">
+        <p className="min-w-0 flex-1 truncate font-heading text-h2 font-bold">{title}</p>
+        <TopBar />
       </div>
+    </div>
+  );
+}
+
+/** Phones: the header stays pinned to the top, with a soft shadow once the page scrolls */
+function PhoneHeader() {
+  const scrolled = useScrolledPast(4);
+  return (
+    <header className={cn(
+      'sticky top-0 z-30 flex items-center gap-1.5 border-b border-line bg-white/95 px-4 pb-2 pt-[calc(env(safe-area-inset-top)+8px)] backdrop-blur-md lg:hidden print:hidden',
+      'transition-shadow duration-300',
+      scrolled && 'shadow-[0_6px_20px_-12px_rgba(31,26,23,.25)]',
+    )}>
+      <NavLink to="/" aria-label="The Gathering Place, home" className="mr-auto rounded-md focus-visible:outline-none focus-visible:shadow-focus">
+        <Logo height={28} />
+      </NavLink>
+      <SearchButton compact />
+      <NotificationsButton />
+      <AccountButton compact />
     </header>
   );
 }
 
-function BottomBar({ items, badges }: { items: NavItem[]; badges: Badges }) {
+function BottomBar({ items, badges, isAdmin }: { items: NavItem[]; badges: Badges; isAdmin: boolean }) {
   const [moreOpen, setMoreOpen] = useState(false);
-  const location = useLocation();
+  const { pathname } = useLocation();
   const signOut = useSignOut();
-  useEffect(() => setMoreOpen(false), [location.pathname]);
+  useEffect(() => setMoreOpen(false), [pathname]);
 
-  const isAdminNav = items.some(i => i.to === '/admin');
-  const primary = isAdminNav ? items.filter(i => ADMIN_PRIMARY.includes(i.to)) : items.slice(0, 3);
+  const primary = isAdmin ? items.filter(i => ADMIN_PRIMARY.includes(i.to)) : items.slice(0, 3);
   const rest = items.filter(i => !primary.includes(i));
-  const moreActive = rest.some(i => (i.end ? location.pathname === i.to : location.pathname.startsWith(i.to)));
-  const moreBadge = rest.reduce((n, i) => n + ((i.badge && badges[i.badge]) || 0), 0);
+  const moreActive = rest.some(i => isActivePath(pathname, i));
+  const moreBadge = rest.reduce((n, i) => n + ((i.badge && i.badge !== 'students' && badges[i.badge]) || 0), 0);
 
-  const tabClass = (active: boolean) => cn(
-    'relative flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-md text-[0.6875rem] font-semibold',
-    'focus-visible:outline-none focus-visible:shadow-focus',
-    active ? 'text-ink' : 'text-muted',
+  const tab = (active: boolean, icon: ReactNode, label: string, badge?: number) => (
+    <>
+      <span className={cn('relative grid h-7 w-12 place-items-center rounded-full', active ? 'bg-subtle text-accent-600' : 'text-muted')}>
+        {icon}
+        <BadgeCount count={badge} className="absolute -right-1.5 -top-1" />
+      </span>
+      <span className={cn('text-[0.6875rem]', active ? 'font-semibold text-ink' : 'font-medium text-muted')}>{label}</span>
+    </>
   );
-  const pill = (active: boolean) => cn('grid h-8 w-14 place-items-center rounded-full transition-colors', active && 'bg-ink');
+  const tabClass = 'flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 rounded-[10px] focus-visible:outline-none focus-visible:shadow-focus';
 
   return (
     <>
-      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 px-2 pb-[calc(env(safe-area-inset-bottom)+6px)] pt-1.5 backdrop-blur lg:hidden print:hidden">
+      <nav aria-label="Main"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 lg:hidden print:hidden">
         <ul className="flex">
           {primary.map(item => (
             <li key={item.to} className="flex flex-1">
-              <NavLink to={item.to} end={item.end} className={({ isActive }) => tabClass(isActive)}>
-                {({ isActive }) => (
-                  <>
-                    <span className={pill(isActive)}>
-                      <item.icon className={cn('h-5 w-5', isActive ? 'text-white' : 'text-muted')} aria-hidden="true" />
-                    </span>
-                    <span>{shortLabel(item.label)}</span>
-                    <BadgeCount count={item.badge && badges[item.badge]} className="absolute right-[18%] top-0" />
-                  </>
-                )}
+              <NavLink to={item.to} end={item.end} className={tabClass}>
+                {({ isActive }) => tab(isActive, <item.icon className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden="true" />, shortLabel(item.label), item.badge !== 'students' ? item.badge && badges[item.badge] : undefined)}
               </NavLink>
             </li>
           ))}
           <li className="flex flex-1">
-            <button type="button" className={tabClass(moreActive)} onClick={() => setMoreOpen(true)} aria-haspopup="dialog">
-              <span className={pill(moreActive)}>
-                <MoreHorizontal className={cn('h-5 w-5', moreActive ? 'text-white' : 'text-muted')} aria-hidden="true" />
-              </span>
-              <span>More</span>
-              <BadgeCount count={moreBadge} className="absolute right-[18%] top-0" />
+            <button type="button" className={tabClass} onClick={() => setMoreOpen(true)} aria-haspopup="dialog">
+              {tab(moreActive, <MoreHorizontal className="h-[18px] w-[18px]" aria-hidden="true" />, 'More', moreBadge)}
             </button>
           </li>
         </ul>
       </nav>
       <Dialog open={moreOpen} onOpenChange={setMoreOpen} title="More">
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           <RoleLine />
-          <ul className="grid gap-1.5">
+          <ul className="grid divide-y divide-line overflow-hidden rounded-card border border-line">
             {rest.map(item => (
               <li key={item.to}>
                 <NavLink
                   to={item.to} end={item.end}
                   className={({ isActive }) => cn(
-                    'flex min-h-[52px] items-center gap-3 rounded-md border px-4 text-body font-medium',
+                    'flex min-h-[48px] items-center gap-3 px-3 text-body font-medium',
                     'focus-visible:outline-none focus-visible:shadow-focus',
-                    isActive ? 'border-ink bg-ink text-white' : 'border-line hover:border-ink/40',
+                    isActive ? 'bg-subtle font-semibold' : 'bg-white',
                   )}
                 >
-                  <item.icon className="h-5 w-5" aria-hidden="true" />
+                  <item.icon className="h-[18px] w-[18px] text-muted" strokeWidth={1.8} aria-hidden="true" />
                   <span className="flex-1">{item.label}</span>
-                  <BadgeCount count={item.badge && badges[item.badge]} />
+                  <BadgeCount count={item.badge && badges[item.badge]} neutral={item.badge === 'students'} />
                 </NavLink>
               </li>
             ))}
             <li>
+              <NavLink to={PROFILE_ITEM.to}
+                className={({ isActive }) => cn('flex min-h-[48px] items-center gap-3 px-3 text-body font-medium focus-visible:outline-none focus-visible:shadow-focus', isActive ? 'bg-subtle font-semibold' : 'bg-white')}>
+                <PROFILE_ITEM.icon className="h-[18px] w-[18px] text-muted" strokeWidth={1.8} aria-hidden="true" />
+                <span className="flex-1">{PROFILE_ITEM.label}</span>
+              </NavLink>
+            </li>
+            <li>
               <button
                 type="button" onClick={signOut}
-                className="flex min-h-[52px] w-full items-center gap-3 rounded-md border border-line px-4 text-body font-medium hover:border-ink/40 focus-visible:outline-none focus-visible:shadow-focus"
+                className="flex min-h-[48px] w-full items-center gap-3 bg-white px-3 text-body font-medium focus-visible:outline-none focus-visible:shadow-focus"
               >
-                <LogOut className="h-5 w-5" aria-hidden="true" /> Sign out
+                <LogOut className="h-[18px] w-[18px] text-muted" aria-hidden="true" /> Log out
               </button>
             </li>
           </ul>
@@ -266,28 +286,58 @@ function BottomBar({ items, badges }: { items: NavItem[]; badges: Badges }) {
 /** Bottom-bar labels must fit ~70px */
 function shortLabel(label: string): string {
   if (label === 'Drop requests') return 'Requests';
-  if (label === 'Mark attendance' || label.endsWith(' class')) return 'Attendance';
-  if (label === 'Register student') return 'Register';
+  if (label === 'My class') return 'Class';
+  if (label === 'Invite students') return 'Invite';
+  if (label === 'Add student') return 'Add';
+  if (label === 'Classes & semesters') return 'Classes';
+  if (label === 'Registrations') return 'Sign-ups';
   return label;
 }
 
 export default function AppShell({ children }: { children?: ReactNode }) {
-  const { items, isAdmin } = useNavItems();
-  const badges = useBadges(isAdmin);
+  const { items, isAdmin, classId } = useNavItems();
+  const students = useStudents(isAdmin, classId);
+  const badges = useBadges(isAdmin, students);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const openSearch = useCallback(() => setSearchOpen(true), []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setSearchOpen(o => !o); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const { pathname } = useLocation();
+  const pageTitle = [...items, PROFILE_ITEM].find(i => isActivePath(pathname, i))?.label ?? '';
+
+  const shell = useMemo<ShellState>(() => ({
+    isAdmin, badges, students, pages: [...items, PROFILE_ITEM], openSearch,
+  }), [isAdmin, badges, students, items, openSearch]);
+
   return (
-    <div className="flex min-h-dvh flex-col bg-canvas font-body text-ink">
-      <a href="#main" className="sr-only z-50 rounded-full bg-ink px-4 py-2 text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
-        Skip to content
-      </a>
-      <TopBar items={items} badges={badges} />
-      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-6 focus:outline-none sm:px-6 lg:px-8 lg:pb-12 lg:pt-10">
-        {children ?? (
-          <Suspense fallback={<LoadingList rows={4} />}>
-            <Outlet />
-          </Suspense>
-        )}
-      </main>
-      <BottomBar items={items} badges={badges} />
-    </div>
+    <ShellContext.Provider value={shell}>
+      <div className="flex min-h-dvh flex-col font-body text-ink">
+        <a href="#main" className="sr-only z-50 rounded-control bg-ink px-4 py-2 text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
+          Skip to content
+        </a>
+        <Sidebar items={items} badges={badges} isAdmin={isAdmin} />
+        <PhoneHeader />
+        <StickyTopBar title={pageTitle} />
+        <main id="main" tabIndex={-1}
+          className="w-full flex-1 px-4 pb-28 pt-4 focus:outline-none sm:px-6 lg:pb-8 lg:pl-[272px] lg:pr-8 lg:pt-6">
+          <div className="mx-auto w-full max-w-[1320px]">
+            {children ?? (
+              <Suspense fallback={<LoadingList rows={4} />}>
+                <PageTransition><Outlet /></PageTransition>
+              </Suspense>
+            )}
+          </div>
+        </main>
+        <BottomBar items={items} badges={badges} isAdmin={isAdmin} />
+        <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} />
+      </div>
+    </ShellContext.Provider>
   );
 }

@@ -4,11 +4,24 @@
   "description": "Attendance and registration for The Gathering Place vocational classes.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F6F4EE",
-  "theme_color": "#1B1A17",
+  "background_color": "#FAF6F1",
+  "theme_color": "#FAF6F1",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

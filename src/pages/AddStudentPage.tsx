@@ -6,6 +6,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
 import { PageHeader } from '../components/layout/PageHeader';
 import { ClassPicker } from '../components/registration/ClassPicker';
+import { RecentRegistrations } from '../components/registration/RecentRegistrations';
 import {
   Button, Card, Dialog, ErrorState, Field, Input, LoadingList, Select, SuccessState, buttonVariants,
 } from '../components/ui';
@@ -16,6 +17,7 @@ import {
 import { subscribeToRegistrationStatus } from '../firebase/systemSettings';
 import useAuthStore from '../store/authStore';
 import { phoneKey } from '../lib/phone';
+import { studentPath } from '../lib/studentPath';
 import { colors } from '../theme/tokens';
 import { GENDERS, MAX_CLASSES_PER_STUDENT } from '../utils/constants';
 
@@ -105,12 +107,14 @@ export default function AddStudentPage() {
   }
 
   return (
-    <div className="max-w-2xl">
+    <>
       <PageHeader
         title="Add a student"
         description="Students you add here skip the review queue. Most students should use the sign-up link instead."
         actions={<Link to="/invite" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Share sign-up link</Link>}
       />
+    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] lg:gap-5">
+    <div className="min-w-0">
 
       {!regOpen && (
         <p className="mb-4 flex items-start gap-2 rounded-xs border border-warn-fg/25 bg-warn-bg px-4 py-3 text-small font-semibold text-warn-fg">
@@ -130,6 +134,7 @@ export default function AddStudentPage() {
           action={
             <div className="flex flex-wrap justify-center gap-2">
               <Button variant="outline" onClick={() => setQrOpen(true)}><QrCode size={16} aria-hidden="true" /> QR code</Button>
+              <Link to={studentPath(added.id)} className={buttonVariants({ variant: 'outline' })}>Open profile</Link>
               <Button onClick={() => setAdded(null)}>Add another</Button>
             </div>
           }
@@ -187,5 +192,8 @@ export default function AddStudentPage() {
         </Dialog>
       )}
     </div>
+      <RecentRegistrations />
+    </div>
+    </>
   );
 }

@@ -2,17 +2,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarClock, School } from 'lucide-react';
+import { TopBar } from '../components/layout/TopBar';
 import { RegisterPanel } from '../components/teacher/RegisterPanel';
 import { RequestsPanel } from '../components/teacher/RequestsPanel';
 import { RosterPanel } from '../components/teacher/RosterPanel';
 import { WeekPicker } from '../components/teacher/WeekPicker';
 import {
-  Card, EmptyState, ErrorState, FilterChip, LoadingList, ProgressBar, Skeleton, TabPanel, Tabs, buttonVariants,
+  Card, EmptyState, ErrorState, LoadingList, ProgressBar, Skeleton, TabPanel, Tabs, buttonVariants,
 } from '../components/ui';
 import { semesterLength, subscribeToWeekAttendance } from '../firebase/attendance';
 import { isHolidaySession, subscribeToClassConfig } from '../firebase/classConfig';
 import { subscribeToDropRequests } from '../firebase/dropRequests';
 import { subscribeToStudentsByClass } from '../firebase/students';
+import { motion, spring } from '../components/motion/config';
+import { cn } from '../lib/cn';
 import useAuthStore from '../store/authStore';
 import { useClassColor, useClassLabel } from '../store/classStore';
 import { currentSemesterWeek, formatDateShort, getSemesterStatus } from '../utils/dateUtils';
@@ -84,46 +87,49 @@ function ClassView({ classId, uid, isAdmin }: { classId: string; uid: string; is
   }, [records.value]);
 
   const loadError = config.error || students.error;
+  const hasSide = (config.value === undefined && !loadError) || (!!semester && (status === 'active' || status === 'ended') && !!week);
 
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)] lg:gap-8">
-      <Card tone={color.surface} className="grid gap-5 lg:sticky lg:top-24">
-        <div>
-          <p className="text-small font-medium text-ink/70">{isAdmin ? 'Your class' : 'Attendance'}</p>
-          <h1 className="font-heading text-h1 md:text-h1-lg">{label}</h1>
-          {semester && (
-            <p className="mt-1 text-small text-ink/70">
-              {semester.label && <span className="block">{semester.label}</span>}
-              {formatDateShort(semester.startDate)} – {formatDateShort(semester.endDate)}
-            </p>
-          )}
+    <div className="grid gap-4 lg:gap-5">
+      <header className="flex items-start gap-3">
+        <span aria-hidden="true" className="grid h-10 w-10 flex-none place-items-center rounded-[9px] border"
+          style={{ backgroundColor: color.surface, color: color.strong, borderColor: color.surface }}>
+          <School size={20} />
+        </span>
+        <div className="min-w-0">
+          <h1 className="truncate font-heading text-h1 font-bold md:text-h1-lg">{label}</h1>
+          <p className="truncate text-small text-muted">
+            {isAdmin ? 'Your class' : 'Attendance'}
+            {semester?.label && <> · {semester.label}</>}
+            {semester && status === 'active' && currentWeek ? <> · Week {currentWeek} of {totalWeeks}</> : status === 'ended' ? <> · Ended</> : null}
+          </p>
         </div>
+        <TopBar className="ml-auto" />
+      </header>
 
-        {config.value === undefined && !loadError ? (
-          <Skeleton className="h-24 w-full rounded-md" />
-        ) : semester && (status === 'active' || status === 'ended') && week ? (
-          <>
-            <ProgressBar value={currentWeek ?? totalWeeks} max={totalWeeks} label="Semester progress" track="rgba(18,18,20,.12)"
-              valueText={status === 'ended' ? 'Semester ended' : `Week ${currentWeek} of ${totalWeeks}`} />
-            <div className="rounded-md bg-surface p-3 shadow-sm">
-              <WeekPicker week={week} lastWeek={lastWeek} totalWeeks={totalWeeks} currentWeek={currentWeek} semester={semester} onChange={setWeek} />
-            </div>
-            {sessionsPerWeek > 1 && (
-              <div className="grid grid-cols-2 gap-2" role="group" aria-label="Session">
-                {Array.from({ length: sessionsPerWeek }, (_, i) => i + 1).map(n => {
-                  const holiday = isHolidaySession(config.value, week, n);
-                  const note = holiday ? 'no class' : sessionDone.has(n) ? 'sent' : 'to do';
-                  return (
-                    <FilterChip key={n} selected={session === n} onClick={() => setSession(n)} className="justify-center">
-                      Session {n} <span className="font-normal opacity-80">· {note}</span>
-                    </FilterChip>
-                  );
-                })}
-              </div>
-            )}
-          </>
-        ) : null}
-      </Card>
+    <div className={cn('grid items-start gap-4 lg:gap-5', hasSide && 'lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)]')}>
+      {config.value === undefined && !loadError ? (
+        <Skeleton className="h-28 w-full rounded-card" />
+      ) : semester && (status === 'active' || status === 'ended') && week ? (
+        <Card className="grid gap-4 lg:sticky lg:top-5">
+          <WeekPicker week={week} lastWeek={lastWeek} totalWeeks={totalWeeks} currentWeek={currentWeek} semester={semester} onChange={setWeek} />
+          <ProgressBar value={currentWeek ?? totalWeeks} max={totalWeeks} label="Semester progress"
+            valueText={status === 'ended' ? 'Semester ended' : `Week ${currentWeek} of ${totalWeeks}`} />
+          {sessionsPerWeek > 1 && (
+            <SessionSwitch
+              sessions={Array.from({ length: sessionsPerWeek }, (_, i) => i + 1).map(n => ({
+                n,
+                note: isHolidaySession(config.value, week, n) ? 'No class' : sessionDone.has(n) ? 'Sent' : 'To do',
+              }))}
+              value={session}
+              onChange={setSession}
+            />
+          )}
+          {semester && (
+            <p className="text-caption text-muted">{formatDateShort(semester.startDate)} to {formatDateShort(semester.endDate)}</p>
+          )}
+        </Card>
+      ) : null}
 
       <div className="min-w-0">
         {loadError ? (
@@ -167,6 +173,34 @@ function ClassView({ classId, uid, isAdmin }: { classId: string; uid: string; is
           </Tabs>
         )}
       </div>
+    </div>
+    </div>
+  );
+}
+
+/** Session 1 / Session 2 segmented control */
+function SessionSwitch({ sessions, value, onChange }: { sessions: { n: number; note: string }[]; value: number; onChange: (n: number) => void }) {
+  return (
+    <div role="group" aria-label="Session" className="grid auto-cols-fr grid-flow-col gap-1 rounded-[10px] border border-line bg-white p-1">
+      {sessions.map(({ n, note }) => {
+        const active = n === value;
+        return (
+          <button key={n} type="button" aria-pressed={active} onClick={() => onChange(n)}
+            className={cn(
+              'relative grid min-h-[44px] place-items-center rounded-[7px] px-2 py-1 text-center leading-tight',
+              'focus-visible:outline-none focus-visible:shadow-focus',
+              active ? 'text-ink' : 'text-muted hover:text-ink',
+            )}>
+            {active && (
+              <motion.span layoutId="session-pill" transition={spring} aria-hidden="true"
+                className="absolute inset-0 rounded-[7px] bg-subtle" />
+            )}
+            <span className="relative text-small font-semibold">Session {n}</span>
+            <span className={cn('relative text-caption font-medium',
+              note === 'Sent' ? 'text-ok-fg' : note === 'No class' ? 'text-info-fg' : 'text-muted')}>{note}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

@@ -118,6 +118,24 @@ export function subscribeToDropRequests(className, callback, onError) {
 }
 
 /**
+ * Real-time listener for one student's drop requests, newest first. A teacher passes their
+ * class, since the rules only let them read that class's requests.
+ * @param {string} studentId
+ * @param {string|null} className
+ * @param {Function} callback
+ * @param {Function} [onError]
+ */
+export function subscribeToStudentDropRequests(studentId, className, callback, onError) {
+  const filters = [where('studentId', '==', studentId)];
+  if (className) filters.push(where('className', '==', className));
+  return onSnapshot(query(collection(db, DROPS_COLLECTION), ...filters), snap => {
+    const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const at = r => r.requestedAt?.toMillis?.() ?? Date.now();
+    callback(rows.sort((a, b) => at(b) - at(a)));
+  }, onError);
+}
+
+/**
  * Real-time listener for all drop requests (admin)
  */
 export function subscribeToAllDropRequests(callback, onError) {

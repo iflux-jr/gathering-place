@@ -15,6 +15,7 @@ import useAuthStore from '../store/authStore';
 import { useActiveClasses, useClassLookup } from '../store/classStore';
 import { currentSemesterWeek, getSemesterStatus } from '../utils/dateUtils';
 import type { AttendanceRecord, ClassConfig, Student, UserProfile } from '../types/firestore';
+import { StudentLink } from '../components/shared/StudentLink';
 
 export default function AttendancePage() {
   const classes = useActiveClasses();
@@ -103,7 +104,7 @@ export default function AttendancePage() {
                 <tbody>
                   {rows.map(row => (
                     <tr key={row.id} className="border-b border-line last:border-0">
-                      <th scope="row" className="py-2.5 pr-3 text-left font-medium">{row.name}</th>
+                      <th scope="row" className="py-2.5 pr-3 text-left font-medium"><StudentLink id={row.id}>{row.name}</StudentLink></th>
                       {sessionNums.map(n => <td key={n} className="px-2 py-2.5 text-center"><Mark record={mark(row.id, n)} off={isHolidaySession(config, week, n)} /></td>)}
                     </tr>
                   ))}
