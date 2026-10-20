@@ -1,5 +1,5 @@
 // Frame for signed-out pages (sign in, forgot password): a welcome panel beside the form
-// on wide screens, and the form alone under the logo on phones.
+// on wide screens, and the form alone under the logo on phones, centred on the screen.
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Logo } from '../brand/Logo';
@@ -31,19 +31,30 @@ export function AuthLayout({ title, description, children }: { title: string; de
           <p className="text-small text-muted">The Gathering Place · Young Single Adults</p>
         </div>
       </aside>
-      <main className="flex flex-col px-4 pb-10 pt-[calc(env(safe-area-inset-top)+20px)] sm:px-8">
-        <Link to="/" className="self-start rounded-md focus-visible:outline-none focus-visible:shadow-focus lg:hidden" aria-label="The Gathering Place, home">
-          <Logo height={38} />
-        </Link>
-        <PageTransition>
-          <div className="glass mx-auto mt-8 grid w-full max-w-md gap-6 rounded-frame p-6 sm:my-auto sm:p-8 lg:mt-[14vh]">
-            <div className="grid gap-2">
-              <h1 className="font-heading text-h1 md:text-h1-lg">{title}</h1>
-              {description && <p className="text-muted">{description}</p>}
+      <main className="flex min-h-dvh flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-[calc(env(safe-area-inset-top)+20px)] sm:px-8">
+        {/* Centred in the space left on the screen, on phones and desktop alike */}
+        <div className="m-auto grid w-full max-w-[400px] gap-5 py-6">
+          <Link to="/" aria-label="The Gathering Place, home"
+            className="flex items-center gap-2.5 justify-self-center rounded-md px-1.5 focus-visible:outline-none focus-visible:shadow-focus lg:hidden">
+            <Logo variant="favicon" height={40} />
+            <span className="font-heading text-[1.1875rem] font-bold text-primary">Gathering Place</span>
+          </Link>
+          <PageTransition>
+            <div className="glass grid gap-6 rounded-[14px] p-5 shadow-[0_18px_40px_-28px_rgba(31,26,23,.35)] sm:p-7">
+              <div className="grid gap-1.5 text-center">
+                <h1 className="font-heading text-h1 font-bold">{title}</h1>
+                {description && <p className="text-small text-muted text-balance">{description}</p>}
+              </div>
+              {children}
             </div>
-            {children}
-          </div>
-        </PageTransition>
+          </PageTransition>
+          <ul className="flex justify-center gap-1.5 lg:hidden" aria-hidden="true">
+            {classes.map(c => (
+              <li key={c.id} className="h-1.5 w-5 rounded-full" style={{ backgroundColor: getClassColor(c.id, c.colorKey).surface }} />
+            ))}
+          </ul>
+        </div>
+        <p className="text-center text-caption text-faint lg:hidden">The Gathering Place · Young Single Adults</p>
       </main>
     </div>
   );
