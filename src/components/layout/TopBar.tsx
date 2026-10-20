@@ -29,7 +29,7 @@ export function SearchButton({ compact }: { compact?: boolean }) {
   }
   return (
     <button type="button" onClick={shell.openSearch}
-      className="flex h-10 w-[300px] items-center gap-2 rounded-[10px] border border-line bg-white px-3 text-left text-body text-faint hover:border-line-strong focus-visible:outline-none focus-visible:shadow-focus xl:w-[340px]">
+      className="flex h-10 w-[240px] items-center gap-2 rounded-[10px] border border-line bg-white px-3 text-left text-body text-faint hover:border-line-strong focus-visible:outline-none focus-visible:shadow-focus xl:w-[300px] 2xl:w-[340px]">
       <Search className="h-4 w-4 text-muted" aria-hidden="true" />
       <span className="flex-1">Search</span>
       <kbd className="rounded-[5px] border border-line bg-canvas px-1.5 py-px font-body text-caption text-muted">{mac ? '⌘K' : 'Ctrl K'}</kbd>

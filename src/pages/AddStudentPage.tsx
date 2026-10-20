@@ -105,12 +105,13 @@ export default function AddStudentPage() {
   }
 
   return (
-    <div className="max-w-2xl">
+    <>
       <PageHeader
         title="Add a student"
         description="Students you add here skip the review queue. Most students should use the sign-up link instead."
         actions={<Link to="/invite" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Share sign-up link</Link>}
       />
+    <div className="max-w-2xl">
 
       {!regOpen && (
         <p className="mb-4 flex items-start gap-2 rounded-xs border border-warn-fg/25 bg-warn-bg px-4 py-3 text-small font-semibold text-warn-fg">
@@ -187,5 +188,6 @@ export default function AddStudentPage() {
         </Dialog>
       )}
     </div>
+    </>
   );
 }

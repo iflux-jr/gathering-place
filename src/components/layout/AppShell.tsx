@@ -17,7 +17,7 @@ import { semesterRange, useProgrammeSemester } from '../../lib/useSemester';
 import { ADMIN_NAV, ADMIN_PRIMARY, INVITE_ITEM, NAV_GROUPS, PROFILE_ITEM, REGISTER_ITEM, TEACHER_NAV, type NavItem } from './navigation';
 import { ShellContext, type Badges, type ShellState } from './shell';
 import { AccountButton, NotificationsButton, SearchButton, SearchPalette, TopBar } from './TopBar';
-import { useScrollReveal } from '../../lib/useScrollReveal';
+import { useScrolledPast } from '../../lib/useScrolledPast';
 import { useSignOut, useWho } from './account';
 import type { Student } from '../../types/firestore';
 
@@ -157,12 +157,12 @@ function Sidebar({ items, badges, isAdmin }: { items: NavItem[]; badges: Badges;
 }
 
 /**
- * Desktop: once the page has scrolled past its own header, scrolling back up slides this bar
- * down from the top with the page name, search, notifications and the person's name.
+ * Desktop: once the page has scrolled past its own header, this bar slides down from the top
+ * with the page name, search, notifications and the person's name, and stays until the
+ * page is back at the top.
  */
 function StickyTopBar({ title }: { title: string }) {
-  const reveal = useScrollReveal(120);
-  const shown = reveal === 'shown';
+  const shown = useScrolledPast(88);
   const ref = useRef<HTMLDivElement>(null);
   // Out of the tab order and hidden from screen readers while tucked away
   useEffect(() => { ref.current?.toggleAttribute('inert', !shown); }, [shown]);
@@ -181,13 +181,14 @@ function StickyTopBar({ title }: { title: string }) {
   );
 }
 
+/** Phones: the header stays pinned to the top, with a soft shadow once the page scrolls */
 function PhoneHeader() {
-  const reveal = useScrollReveal(64);
+  const scrolled = useScrolledPast(4);
   return (
     <header className={cn(
       'sticky top-0 z-30 flex items-center gap-1.5 border-b border-line bg-white/95 px-4 pb-2 pt-[calc(env(safe-area-inset-top)+8px)] backdrop-blur-md lg:hidden print:hidden',
-      'transition-transform duration-300 ease-[cubic-bezier(.2,.8,.2,1)] motion-reduce:transition-none',
-      reveal === 'hidden' && '-translate-y-full',
+      'transition-shadow duration-300',
+      scrolled && 'shadow-[0_6px_20px_-12px_rgba(31,26,23,.25)]',
     )}>
       <NavLink to="/" aria-label="The Gathering Place, home" className="mr-auto rounded-md focus-visible:outline-none focus-visible:shadow-focus">
         <Logo height={28} />
