@@ -36,3 +36,5 @@ yarn-error.log*
 
 # Firebase emulator logs
 *-debug.log
+
+service-account.json
