@@ -95,4 +95,23 @@
 @layer utilities {
   .text-balance { text-wrap: balance; }
   .tabular { font-variant-numeric: tabular-nums; }
+
+  /* Slim scrollbar for side panels: no arrows or track, a soft pill that darkens on hover */
+  .scrollbar-quiet { scrollbar-gutter: stable; }
+  /* Firefox; Chromium and Safari use the pseudo-elements below, which give more control */
+  @supports not selector(::-webkit-scrollbar) {
+    .scrollbar-quiet { scrollbar-width: thin; scrollbar-color: #E4DED7 transparent; }
+    .scrollbar-quiet:hover { scrollbar-color: #CFC7BE transparent; }
+  }
+  .scrollbar-quiet::-webkit-scrollbar { width: 8px; }
+  .scrollbar-quiet::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-quiet::-webkit-scrollbar-button { display: none; height: 0; }
+  .scrollbar-quiet::-webkit-scrollbar-thumb {
+    background: #E4DED7 padding-box;
+    border: 2px solid transparent;
+    border-radius: 999px;
+  }
+  .scrollbar-quiet:hover::-webkit-scrollbar-thumb { background-color: #CFC7BE; }
+  .scrollbar-quiet::-webkit-scrollbar-thumb:hover,
+  .scrollbar-quiet::-webkit-scrollbar-thumb:active { background-color: #B3A99F; }
 }

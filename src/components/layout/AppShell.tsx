@@ -143,7 +143,7 @@ function Sidebar({ items, badges, isAdmin }: { items: NavItem[]; badges: Badges;
         <Logo variant="favicon" height={34} />
         <span className="font-heading text-[1.0625rem] font-bold text-primary">Gathering Place</span>
       </NavLink>
-      <nav aria-label="Main" className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
+      <nav aria-label="Main" className="scrollbar-quiet -mx-1 min-h-0 flex-1 overflow-y-auto px-1">
         {groups.map(g => g.items.length > 0 && (
           <div key={g.title} className="mb-5">
             <p className="mb-1.5 px-2.5 text-label font-semibold uppercase tracking-[0.04em] text-faint">{g.title}</p>
