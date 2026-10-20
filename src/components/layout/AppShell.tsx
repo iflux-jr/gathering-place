@@ -1,7 +1,7 @@
 // The signed-in app frame. Desktop: a white sidebar with grouped sections and the semester at
 // the bottom; search, notifications and the person's name sit at the top of each page (TopBar).
 // Phones: a slim header with the same tools and a tab bar along the bottom.
-import { Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { CalendarDays, LogOut, MoreHorizontal } from 'lucide-react';
 import { Logo } from '../brand/Logo';
@@ -16,7 +16,8 @@ import { useClassLabel } from '../../store/classStore';
 import { semesterRange, useProgrammeSemester } from '../../lib/useSemester';
 import { ADMIN_NAV, ADMIN_PRIMARY, INVITE_ITEM, NAV_GROUPS, PROFILE_ITEM, REGISTER_ITEM, TEACHER_NAV, type NavItem } from './navigation';
 import { ShellContext, type Badges, type ShellState } from './shell';
-import { AccountButton, NotificationsButton, SearchButton, SearchPalette } from './TopBar';
+import { AccountButton, NotificationsButton, SearchButton, SearchPalette, TopBar } from './TopBar';
+import { useScrollReveal } from '../../lib/useScrollReveal';
 import { useSignOut, useWho } from './account';
 import type { Student } from '../../types/firestore';
 
@@ -155,9 +156,39 @@ function Sidebar({ items, badges, isAdmin }: { items: NavItem[]; badges: Badges;
   );
 }
 
-function PhoneHeader() {
+/**
+ * Desktop: once the page has scrolled past its own header, scrolling back up slides this bar
+ * down from the top with the page name, search, notifications and the person's name.
+ */
+function StickyTopBar({ title }: { title: string }) {
+  const reveal = useScrollReveal(120);
+  const shown = reveal === 'shown';
+  const ref = useRef<HTMLDivElement>(null);
+  // Out of the tab order and hidden from screen readers while tucked away
+  useEffect(() => { ref.current?.toggleAttribute('inert', !shown); }, [shown]);
   return (
-    <header className="flex items-center gap-1.5 border-b border-line bg-white px-4 pb-2 pt-[calc(env(safe-area-inset-top)+8px)] lg:hidden print:hidden">
+    <div ref={ref} aria-hidden={!shown}
+      className={cn(
+        'fixed left-[240px] right-0 top-0 z-20 hidden border-b border-line bg-white/90 backdrop-blur-md lg:block print:hidden',
+        'transition-[transform,opacity,box-shadow] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] motion-reduce:transition-none',
+        shown ? 'translate-y-0 opacity-100 shadow-[0_6px_20px_-12px_rgba(31,26,23,.25)]' : '-translate-y-full opacity-0',
+      )}>
+      <div className="mx-auto flex h-16 w-full max-w-[calc(1320px+64px)] items-center gap-3 px-8">
+        <p className="min-w-0 flex-1 truncate font-heading text-h2 font-bold">{title}</p>
+        <TopBar />
+      </div>
+    </div>
+  );
+}
+
+function PhoneHeader() {
+  const reveal = useScrollReveal(64);
+  return (
+    <header className={cn(
+      'sticky top-0 z-30 flex items-center gap-1.5 border-b border-line bg-white/95 px-4 pb-2 pt-[calc(env(safe-area-inset-top)+8px)] backdrop-blur-md lg:hidden print:hidden',
+      'transition-transform duration-300 ease-[cubic-bezier(.2,.8,.2,1)] motion-reduce:transition-none',
+      reveal === 'hidden' && '-translate-y-full',
+    )}>
       <NavLink to="/" aria-label="The Gathering Place, home" className="mr-auto rounded-md focus-visible:outline-none focus-visible:shadow-focus">
         <Logo height={28} />
       </NavLink>
@@ -277,6 +308,9 @@ export default function AppShell({ children }: { children?: ReactNode }) {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  const { pathname } = useLocation();
+  const pageTitle = [...items, PROFILE_ITEM].find(i => isActivePath(pathname, i))?.label ?? '';
+
   const shell = useMemo<ShellState>(() => ({
     isAdmin, badges, students, pages: [...items, PROFILE_ITEM], openSearch,
   }), [isAdmin, badges, students, items, openSearch]);
@@ -289,6 +323,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
         </a>
         <Sidebar items={items} badges={badges} isAdmin={isAdmin} />
         <PhoneHeader />
+        <StickyTopBar title={pageTitle} />
         <main id="main" tabIndex={-1}
           className="w-full flex-1 px-4 pb-28 pt-4 focus:outline-none sm:px-6 lg:pb-8 lg:pl-[272px] lg:pr-8 lg:pt-6">
           <div className="mx-auto w-full max-w-[1320px]">
