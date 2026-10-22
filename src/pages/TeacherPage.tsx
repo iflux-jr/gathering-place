@@ -90,7 +90,7 @@ function ClassView({ classId, uid, isAdmin }: { classId: string; uid: string; is
   const hasSide = (config.value === undefined && !loadError) || (!!semester && (status === 'active' || status === 'ended') && !!week);
 
   return (
-    <div className="grid gap-4 lg:gap-5">
+    <div className="grid grid-cols-1 gap-4 lg:gap-5">
       <header className="flex items-start gap-3">
         <span aria-hidden="true" className="grid h-10 w-10 flex-none place-items-center rounded-[9px] border"
           style={{ backgroundColor: color.surface, color: color.strong, borderColor: color.surface }}>
