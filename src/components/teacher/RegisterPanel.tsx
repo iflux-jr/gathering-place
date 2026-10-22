@@ -137,9 +137,9 @@ export function RegisterPanel({ classId, uid, week, session, semester, students,
   const marked = students.length - unmarked;
 
   const sendNote = unsent ? (
-    <span className="inline-flex items-center gap-1 text-warn-fg"><CloudOff size={12} aria-hidden="true" /> Not sent yet</span>
+    <span className="text-warn-fg"><CloudOff size={12} className="mr-1 inline align-[-1px]" aria-hidden="true" />Not sent yet</span>
   ) : waiting ? (
-    <span className="inline-flex items-center gap-1 text-warn-fg"><CloudOff size={12} aria-hidden="true" /> Saved on this phone, sends when online</span>
+    <span className="text-warn-fg"><CloudOff size={12} className="mr-1 inline align-[-1px]" aria-hidden="true" />Saved on this phone, sends when online</span>
   ) : submittedAt ? (
     `Sent ${formatDateShort(submittedAt)}, ${formatTime(submittedAt)}`
   ) : null;
